@@ -103,12 +103,17 @@ sub print_input_form {
   my($q_income)   = &escape_html(decode('utf-8', $form->param('income')));
   my($q_note)     = &escape_html(decode('utf-8', $form->param('note')));
 
+  my($q_year, $q_mon, $q_day) = split(/[\/\-]/, $q_date);
+
   my($sec, $min, $hour, $day, $mon, $year) = localtime(time);
   $year += 1900;
   $mon += 1;
 
   if (! $q_date || $q_date eq '') {
     $q_date = "${year}/${mon}/${day}";
+    $q_year = $year;
+    $q_mon  = $mon;
+    $q_day  = $day;
   }
 
   &header_smp(encode('utf-8', '出納入力画面'));
@@ -240,8 +245,8 @@ EOF
 <div class="center"><input type="submit" class="submit_button" name="b_submit" tabindex="7" value="送信"></div><br>
 </form>
 <hr>
-<a href="$ENV{'SCRIPT_NAME'}?mode=view">出納出力</a> | 
-<a href="$ENV{'SCRIPT_NAME'}?mode=figures">統計画面</a>
+<a href="$ENV{'SCRIPT_NAME'}?mode=view&year=${q_year}&mon=${q_mon}">出納出力</a> | 
+<a href="$ENV{'SCRIPT_NAME'}?mode=figures&year=${q_year}&mon=${q_mon}">統計画面</a>
 <script type="text/javascript">
 <!--
   document.f_input.date.value = "$q_date";
@@ -352,7 +357,7 @@ sub do_input {
   };
 
   if($@) {
-    &error(encode('utf-8', "データベースにエラーが発生しました"));
+    &error(encode('utf-8', "登録に失敗しました"));
   }
 
   $dbh->disconnect;
@@ -362,8 +367,10 @@ sub do_input {
 <form action="$ENV{'SCRIPT_NAME'}" name="f" method="POST">
 <div class="center">
 <input type="hidden" name="mode" value="reg">
+<input type="hidden" name="year" value="${year}">
+<input type="hidden" name="mon"  value="${mon}">
 <input type="submit" class="normal_button" style="width: 160px; margin-bottom: 5px;" value="入力画面に戻る"><br>
-<input type="button" class="normal_button" style="width: 160px; margin-top: 5px" onClick=\"gotoView()\" value="出納を見る">
+<input type="button" class="normal_button" style="width: 160px; margin-top: 5px" onClick="gotoView()" value="出納を見る">
 </div>
 </form>
 <script type="text/javascript">
@@ -396,7 +403,7 @@ sub print_view_form() {
 
   my $mes = <<EOF;
 <span style="float: left">
-<a href="$ENV{'SCRIPT_NAME'}">入力画面</a> | <a href="$ENV{'SCRIPT_NAME'}?mode=figures">統計画面</a>
+<a href="$ENV{'SCRIPT_NAME'}">入力画面</a> | <a href="$ENV{'SCRIPT_NAME'}?mode=figures&year=${year}&mon=${mon}">統計画面</a>
 </span><span style="float: right">
 <a href="$ENV{'SCRIPT_NAME'}?mode=csv&year=${year}&mon=${mon}">CSV出力</a>
 </span>
@@ -585,7 +592,7 @@ sub print_figures {
   $mon = &escape_html($form->param('mon')) if length($form->param('mon')) > 0;
 
   my $mes = <<EOF;
-<a href="$ENV{'SCRIPT_NAME'}">入力画面</a> | <a href="$ENV{'SCRIPT_NAME'}?mode=view">出納出力</a>
+<a href="$ENV{'SCRIPT_NAME'}">入力画面</a> | <a href="$ENV{'SCRIPT_NAME'}?mode=view&year=${year}&mon=${mon}">出納出力</a>
 <hr>
 <h2>${year}年${mon}月の統計</h2>
 <form action="$ENV{'SCRIPT_NAME'}" method="GET" name="fym">
@@ -627,7 +634,7 @@ EOF
 -->
 </script>
 <h3>日毎の支出</h3>
-<table class=\"tb1\">
+<table class="tb1">
 <tr><th>日</th><th>支出</th><th>収入</th><th>差引</th></tr>
 EOF
   print(encode('utf-8', $mes));
@@ -928,6 +935,8 @@ sub do_edit {
 <form action="$ENV{'SCRIPT_NAME'}" name="f" method="POST">
 <div class="center">
 <input type="hidden" name="mode" value="view">
+<input type="hidden" name="year" value="${year}">
+<input type="hidden" name="mon"  value="${mon}">
 <input type="submit" class="normal_button" value="出納出力に戻る">
 </div>
 </form>
@@ -1068,7 +1077,7 @@ sub do_memoedit() {
 END:
   $dbh->disconnect;
 
-  print "Location: $ENV{'REQUEST_SCHEME'}://$ENV{'HTTP_HOST'}$ENV{'SCRIPT_NAME'}?mode=view\n\n";
+  print "Location: $ENV{'REQUEST_SCHEME'}://$ENV{'HTTP_HOST'}$ENV{'SCRIPT_NAME'}?mode=view&year=${q_year}&mon=${q_mon}\n\n";
   exit(0);
 }
 
