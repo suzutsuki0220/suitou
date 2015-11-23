@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#/usr/bin/perl
 
 use utf8;
 use Encode;
@@ -28,7 +28,7 @@ use CGI;
 #  mysql> CREATE INDEX idx_month ON webform (month);
 #
 # ---
-require './lib/util.pl';
+require './util.pl';
 
 my $db_user = "mysql";
 my $db_pass = "mysql";

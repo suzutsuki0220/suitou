@@ -4,47 +4,6 @@ use utf8;
 use Encode;
 use Encode::Guess;
 
-sub parseInput
-{
-  my($encoding) = @_;
-  my($method) = $ENV{'REQUEST_METHOD'};
-  local($query, @in, $key, $val);
-#  require 'jcode.pl' if $encoding;
-  if ($method eq 'GET') {
-    $query = $ENV{'QUERY_STRING'};
-  }
-  elsif ($method eq 'POST') {
-    read(STDIN, $query, $ENV{'CONTENT_LENGTH'});
-  }
-  local(@query) = split(/&/, $query);
-  foreach(@query) {  # $in{'Name'} = 'Val'
-    tr/+/ /;
-    ($key, $val) = split(/=/);
-    $key =~ s/%([A-Fa-f0-9][A-Fa-f0-9])/pack("c", hex($1))/ge;
-    $val =~ s/%([A-Fa-f0-9][A-Fa-f0-9])/pack("c", hex($1))/ge;
-    $val == s/\r\n/\n/g;
-#    jcode'convert(*key, $encoding) if ($encoding);
-#    jcode'convert(*val, $encoding) if ($encoding);
-    if( $encoding ) {
-      my $guess;
-#	  if( ! utf8::is_utf8($key) ) {
-#        $guess = guess_encoding($key, qw/euc-jp shiftjis 7bit-jis/);
-#        $key = encode('utf8', decode($guess, $key));
-#        $guess = guess_encoding($key, qw/utf8 euc-jp cp932 7bit-jis/);
-        $key = decode('UTF-8', $key);
-#	  }
-#	  if( ! utf8::is_utf8($val) ) {
-#        $guess = guess_encoding($val, qw/euc-jp shiftjis 7bit-jis/);
-#        $val = encode('utf8', decode($guess, $val));
-#        $guess = guess_encoding($val, qw/utf8 euc-jp cp932 7bit-jis/);
-        $val = decode('UTF-8', $val);
-#	  }
-    }
-    $in{$key} = $val;
-  }
-  return *in;
-}
-
 sub error {
   my($message) = @_;
 
@@ -264,61 +223,6 @@ sub escape_html {
   $string =~ s/\n/&#x0a;/g;
 
   return $string;
-}
-
-sub inode_path {
-  my($path, $inodes) = @_;
-
-  if($inodes =~ /[^0123456789\/]/) {
-    return;
-  }
-  $inodes =~ s/^\///;
-
-  foreach $inode (split('/', $inodes)) {
-    my $match_flag = 0;
-    opendir(DIR, $path) or return;
-    while($entry = readdir DIR) {
-      my $point_inode = (stat "$path/$entry")[1];
-      if($inode == $point_inode) {
-        $match_flag = 1;
-        $path .= "/" . $entry;
-        last;
-      }
-    }
-    closedir(DIR);
-    if($match_flag == 0) {
-      return;
-    }
-  }
-
-  return $path;
-}
-
-sub path_inode {
-  my($path, $files) = @_;
-
-  $files =~ s/^\///;
-  my $all_inode = "";
-
-  foreach $elem (split('/', $files)) {
-    my $match_flag = 0;
-    opendir(DIR, $path) or return;
-    while($entry = readdir DIR) {
-      if("$elem" eq "$entry") {
-        my $point_inode = (stat "$path/$entry")[1];
-        $match_flag = 1;
-        $path .= "/" . $entry;
-        $all_inode .= "/" . $point_inode;
-        last;
-      }
-    }
-    closedir(DIR);
-    if($match_flag == 0) {
-      return;
-    }
-  }
-
-  return $all_inode;
 }
 
 
