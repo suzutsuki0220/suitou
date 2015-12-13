@@ -37,7 +37,6 @@ if(isSP()) {
 <meta http-equiv="Content-Style-Type" content="text/css">
 <!-- <meta name="apple-mobile-web-app-capable" content="yes"> -->
 <!-- <meta name="apple-mobile-web-app-status-bar-style" content="black"> -->
-<link rel="apple-touch-icon-precomposed" href="/oxygen-icons/categories/applications-internet.png">
 EOF
 } else {
   # PC向けヘッダ
@@ -147,7 +146,6 @@ sub header_smp {
 <meta name="apple-touch-fullscreen" content="YES">
 <meta http-equiv="Content-Script-Type" content="text/javascript">
 <meta http-equiv="Content-Style-Type" content="text/css">
-<link rel="apple-touch-icon-precomposed" href="/oxygen-icons/categories/applications-internet.png">
 <style type="text/css">
 <!--
   body {
