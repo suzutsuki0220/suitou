@@ -58,33 +58,35 @@ my @category = (
 "その他"
 );
 
-if( $form->param('mode') eq '' || $form->param('mode') eq 'reg') {
+my $mode = scalar($form->param('mode'));
+
+if( $mode eq '' || $mode eq 'reg') {
   &print_input_form();
-} elsif( $form->param('mode') eq 'confirm_input' ) {
+} elsif( $mode eq 'confirm_input' ) {
   &confirm_input();
-} elsif( $form->param('mode') eq 'do_input' ) {
+} elsif( $mode eq 'do_input' ) {
   &do_input();
-} elsif( $form->param('mode') eq 'view' ) {
+} elsif( $mode eq 'view' ) {
   &print_view_form();
-} elsif( $form->param('mode') eq 'figures' ) {
+} elsif( $mode eq 'figures' ) {
   &print_figures();
-} elsif( $form->param('mode') eq 'edit' ) {
+} elsif( $mode eq 'edit' ) {
   &print_edit_form();
-} elsif( $form->param('mode') eq 'do_edit' ) {
+} elsif( $mode eq 'do_edit' ) {
   &do_edit();
-} elsif( $form->param('mode') eq 'do_delete' ) {
+} elsif( $mode eq 'do_delete' ) {
   &do_delete();
-#} elsif( $form->param('mode') eq 'memo_edit' ) {
+#} elsif( $mode eq 'memo_edit' ) {
 #  &print_memoedit_form();
-} elsif( $form->param('mode') eq 'memo_do_edit' ) {
+} elsif( $mode eq 'memo_do_edit' ) {
   &do_memoedit();
-} elsif( $form->param('mode') eq 'csv' ) {
+} elsif( $mode eq 'csv' ) {
   &csv();
-} elsif( $form->param('mode') eq 'restore' ) {
+} elsif( $mode eq 'restore' ) {
   &restore_form();
-} elsif( $form->param('mode') eq 'do_restore' ) {
+} elsif( $mode eq 'do_restore' ) {
   &data_restore();
-} elsif( $form->param('mode') eq 'count' ) {
+} elsif( $mode eq 'count' ) {
   &data_count();
 } else {
   &print_input_form();
@@ -96,12 +98,12 @@ exit(0);
 #  入力画面  #
 ##############
 sub print_input_form {
-  my($q_date)     = &escape_html(decode('utf-8', $form->param('date')));
-  my($q_category) = &escape_html(decode('utf-8', $form->param('category')));
-  my($q_summary)  = &escape_html(decode('utf-8', $form->param('summary')));
-  my($q_expend)   = &escape_html(decode('utf-8', $form->param('expend')));
-  my($q_income)   = &escape_html(decode('utf-8', $form->param('income')));
-  my($q_note)     = &escape_html(decode('utf-8', $form->param('note')));
+  my $q_date     = &escape_html(decode('utf-8', scalar($form->param('date'))));
+  my $q_category = &escape_html(decode('utf-8', scalar($form->param('category'))));
+  my $q_summary  = &escape_html(decode('utf-8', scalar($form->param('summary'))));
+  my $q_expend   = &escape_html(decode('utf-8', scalar($form->param('expend'))));
+  my $q_income   = &escape_html(decode('utf-8', scalar($form->param('income'))));
+  my $q_note     = &escape_html(decode('utf-8', scalar($form->param('note'))));
 
   my($q_year, $q_mon, $q_day) = split(/[\/\-]/, $q_date);
 
@@ -265,12 +267,12 @@ EOF
 }
 
 sub confirm_input {
-  my($q_date)     = &escape_html(decode('utf-8', $form->param('date')));
-  my($q_category) = &escape_html(decode('utf-8', $form->param('category')));
-  my($q_summary)  = &escape_html(decode('utf-8', $form->param('summary')));
-  my($q_expend)   = &escape_html(decode('utf-8', $form->param('expend')));
-  my($q_income)   = &escape_html(decode('utf-8', $form->param('income')));
-  my($q_note)     = &escape_html(decode('utf-8', $form->param('note')));
+  my $q_date     = &escape_html(decode('utf-8', scalar($form->param('date'))));
+  my $q_category = &escape_html(decode('utf-8', scalar($form->param('category'))));
+  my $q_summary  = &escape_html(decode('utf-8', scalar($form->param('summary'))));
+  my $q_expend   = &escape_html(decode('utf-8', scalar($form->param('expend'))));
+  my $q_income   = &escape_html(decode('utf-8', scalar($form->param('income'))));
+  my $q_note     = &escape_html(decode('utf-8', scalar($form->param('note'))));
 
   &header_smp(encode('utf-8', '確認画面'));
 
@@ -320,13 +322,13 @@ sub do_input {
 
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
 
-  my($q_date)     = &escape_html(decode('utf-8', $form->param('date')));
-  my($q_category) = $dbh->quote(decode('utf-8', $form->param('category')));
-  my($q_summary)  = $dbh->quote(decode('utf-8', $form->param('summary')));
-  my($q_expend)   = int($form->param('expend'));
-  my($q_income)   = int($form->param('income'));
-  my($q_note)     = $dbh->quote(decode('utf-8', $form->param('note')));
-  my($q_user)     = $dbh->quote($ENV{'REMOTE_USER'});
+  my $q_date     = &escape_html(decode('utf-8', scalar($form->param('date'))));
+  my $q_category = $dbh->quote(decode('utf-8', scalar($form->param('category'))));
+  my $q_summary  = $dbh->quote(decode('utf-8', scalar($form->param('summary'))));
+  my $q_expend   = int(scalar($form->param('expend')));
+  my $q_income   = int(scalar($form->param('income')));
+  my $q_note     = $dbh->quote(decode('utf-8', scalar($form->param('note'))));
+  my $q_user     = $dbh->quote($ENV{'REMOTE_USER'});
 
   my($year, $mon, $day) = split(/[\/\-]/, $q_date);
 
@@ -398,8 +400,8 @@ sub print_view_form() {
   my($sec, $min, $hour, $day, $mon, $year) = localtime(time);
   $year += 1900;
   $mon += 1;
-  $year = &escape_html($form->param('year')) if length($form->param('year')) > 0;
-  $mon = &escape_html($form->param('mon')) if length($form->param('mon')) > 0;
+  $year = &escape_html(scalar $form->param('year')) if length(scalar $form->param('year')) > 0;
+  $mon = &escape_html(scalar $form->param('mon')) if length(scalar $form->param('mon')) > 0;
 
   my $mes = <<EOF;
 <span style="float: left">
@@ -588,8 +590,8 @@ sub print_figures {
   my($sec, $min, $hour, $day, $mon, $year) = localtime(time);
   $year += 1900;
   $mon += 1;
-  $year = &escape_html($form->param('year')) if length($form->param('year')) > 0;
-  $mon = &escape_html($form->param('mon')) if length($form->param('mon')) > 0;
+  $year = &escape_html(scalar $form->param('year')) if length(scalar $form->param('year')) > 0;
+  $mon = &escape_html(scalar $form->param('mon')) if length(scalar $form->param('mon')) > 0;
 
   my $mes = <<EOF;
 <a href="$ENV{'SCRIPT_NAME'}">入力画面</a> | <a href="$ENV{'SCRIPT_NAME'}?mode=view&year=${year}&mon=${mon}">出納出力</a>
@@ -716,11 +718,11 @@ EOF
 sub print_edit_form {
   &header_smp(encode('utf-8', '編集'));
 
-  if(! $form->param('id') || $form->param('id') eq '') {
+  if(! scalar($form->param('id')) || scalar($form->param('id')) eq '') {
     &error(encode('utf-8', 'IDが指定されていません'));
   } 
 
-  my($id) = &escape_html($form->param('id'));
+  my $id = &escape_html(scalar $form->param('id'));
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
 
   my $query  = "SELECT year, month, day, category, summary, expend, income, note ";
@@ -730,12 +732,12 @@ sub print_edit_form {
   $sth->execute();
   if ($sth->rows > 0) {
     my @row = $sth->fetchrow_array;
-    my($q_date)     = &escape_html("$row[0]/$row[1]/$row[2]");
-    my($q_category) = &escape_html($row[3]);
-    my($q_summary)  = &escape_html($row[4]);
-    my($q_expend)   = &escape_html($row[5]);
-    my($q_income)   = &escape_html($row[6]);
-    my($q_note)     = &escape_html($row[7]);
+    my $q_date     = &escape_html("$row[0]/$row[1]/$row[2]");
+    my $q_category = &escape_html($row[3]);
+    my $q_summary  = &escape_html($row[4]);
+    my $q_expend   = &escape_html($row[5]);
+    my $q_income   = &escape_html($row[6]);
+    my $q_note     = &escape_html($row[7]);
 
     my $mes = <<EOF;
 <h2>出納編集画面</h2>
@@ -883,19 +885,19 @@ EOF
 sub do_edit {
   &header_smp(encode('utf-8', '編集しました'));
 
-  if(! $form->param('id') || $form->param('id') eq '') {
+  if(! scalar($form->param('id')) || scalar($form->param('id')) eq '') {
     &error(encode('utf-8', 'IDが指定されていません'));
   } 
 
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
 
-  my($q_id)       = int($form->param('id'));
-  my($q_date)     = &escape_html($form->param('date'));
-  my($q_category) = $dbh->quote($form->param('category'));
-  my($q_summary)  = $dbh->quote($form->param('summary'));
-  my($q_expend)   = int($form->param('expend'));
-  my($q_income)   = int($form->param('income'));
-  my($q_note)     = $dbh->quote($form->param('note'));
+  my $q_id       = int(scalar $form->param('id'));
+  my $q_date     = &escape_html(scalar $form->param('date'));
+  my $q_category = $dbh->quote(scalar $form->param('category'));
+  my $q_summary  = $dbh->quote(scalar $form->param('summary'));
+  my $q_expend   = int(scalar $form->param('expend'));
+  my $q_income   = int(scalar $form->param('income'));
+  my $q_note     = $dbh->quote(scalar $form->param('note'));
 
   my($year, $mon, $day) = split(/[\/\-]/, $q_date);
   # 入力値チェック
@@ -950,12 +952,12 @@ EOF
 sub do_delete {
   &header_smp(encode('utf-8', '削除しました'));
 
-  if(! $form->param('id') || $form->param('id') eq '') {
+  if(! scalar($form->param('id')) || scalar($form->param('id')) eq '') {
     &error('IDが指定されていません');
   } 
 
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
-  my($q_id)  = int($form->param('id'));
+  my $q_id = int(scalar $form->param('id'));
 
   my $query = "DELETE FROM webform WHERE id=$q_id;";
   eval {
@@ -987,8 +989,8 @@ EOF
 
 sub print_memoedit_form() {
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
-  my ($q_year) = int($form->param('year'));
-  my ($q_mon)  = int($form->param('mon'));
+  my ($q_year) = int(scalar $form->param('year'));
+  my ($q_mon)  = int(scalar $form->param('mon'));
 
   my $memo_text;
   $query  = "SELECT text ";
@@ -1032,9 +1034,9 @@ EOF
 
 sub do_memoedit() {
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
-  my ($q_year) = int($form->param('year'));
-  my ($q_mon)  = int($form->param('mon'));
-  my ($q_memo) = &escape_html(decode('utf-8', $form->param('memo')));
+  my ($q_year) = int(scalar $form->param('year'));
+  my ($q_mon)  = int(scalar $form->param('mon'));
+  my ($q_memo) = &escape_html(decode('utf-8', scalar($form->param('memo'))));
 
   if($q_year !~ /^\d+$/ || $q_year < 2000 || $q_year > 2050 ||
      $q_mon  !~ /^\d+$/ || $q_mon  < 0    || $q_mon  > 13   )
@@ -1083,8 +1085,8 @@ END:
 
 sub csv() {
   my $filename, $query;
-  my $year = $form->param('year');
-  my $mon  = $form->param('mon');
+  my $year = scalar($form->param('year'));
+  my $mon  = scalar($form->param('mon'));
   if (length($year) == 0 || length($mon) == 0) {
     $filename = "suitou.csv";
    $query  = "SELECT year, month, day, category, summary, expend, income, note ";
@@ -1154,11 +1156,11 @@ EOF
 sub data_restore() {
   my $line = 0;
   my $guess;
-  my $fh = $form->upload('upload_file');
+  my $fh = scalar($form->upload('upload_file'));
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
   my $sth;
 
-  if ($form->param('action') eq "refresh") {
+  if (scalar($form->param('action')) eq "refresh") {
     $sth = $dbh->prepare("DELETE FROM webform;");
     $sth->execute();
   }
