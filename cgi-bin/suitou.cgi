@@ -748,11 +748,11 @@ sub print_edit_form {
   if ($sth->rows > 0) {
     my @row = $sth->fetchrow_array;
     my $q_date     = &escape_html("$row[0]/$row[1]/$row[2]");
-    my $q_category = &escape_html($row[3]);
-    my $q_summary  = &escape_html($row[4]);
+    my $category   = &escape_wquot($row[3]);
+    my $summary    = &escape_wquot($row[4]);
     my $q_expend   = &escape_html($row[5]);
     my $q_income   = &escape_html($row[6]);
-    my $q_note     = &escape_html($row[7]);
+    my $note       = &escape_wquot($row[7]);
 
     my $mes = <<EOF;
 <h2>出納編集画面</h2>
@@ -787,11 +787,11 @@ EOF
 <script type="text/JavaScript">
 <!--
   document.f_input.date.value = "${q_date}";
-  document.f_input.category.value = "${q_category}";
-  document.f_input.summary.value = "${q_summary}";
+  document.f_input.category.value = "${category}";
+  document.f_input.summary.value = "${summary}";
   document.f_input.expend.value = "${q_expend}";
   document.f_input.income.value = "${q_income}";
-  document.f_input.note.value = "${q_note}";
+  document.f_input.note.value = "${note}";
 
   function check_inform() {
     if(! document.f_input.expend.value && ! document.f_input.income.value &&

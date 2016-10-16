@@ -236,6 +236,13 @@ sub escape_html {
   return $string;
 }
 
+sub escape_wquot {
+  my($string) = @_;
+
+  $string =~ s/"/\\"/g;
+
+  return $string;
+}
 
 __EXIT__
 
