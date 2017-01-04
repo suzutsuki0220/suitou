@@ -186,6 +186,17 @@ sub header_smp {
     margin: 0px;
     padding: 5px 35px 5px 35px;
   }
+
+  #Calendar {
+    background: -webkit-linear-gradient(top, #fff 0%, #f0f0f0 100%);
+    background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
+    border: 1px solid #ccc;
+    border-top: 4px solid #1c66fe;
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, 1) inset;
+    margin: 0.5em 0 2em 0;
+    padding: 2em;
+    width: 200px;
+  }
 -->
 </style>
 <title>${title}</title>

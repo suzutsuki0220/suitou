@@ -233,6 +233,91 @@ sub print_input_form {
     s = s.replace(/　/g, " ");
     return s;
   }
+
+  function showCalendar(d) {
+    var dayArray = d.toString().split("/", 3);
+    var year = parseInt(dayArray[0]);
+    var mon = parseInt(dayArray[1]);
+    var today = new Date();
+    var thismon = today.getFullYear() + "/" + (parseInt(today.getMonth())+1) + "/0";
+    var lastmon  = parseInt(mon)-1;
+    var lastyear = year;
+    if (parseInt(mon)-1 < 1) {
+	lastyear = year - 1;
+	lastmon  = 12;
+    }
+    var nextmon  = parseInt(mon)+1;
+    var nextyear = year;
+    if (parseInt(mon)+1 > 12) {
+	nextyear = year + 1;
+	nextmon  = 1;
+    }
+
+    htmldata  = '<a href="javascript:showCalendar(\\'' + lastyear + '/' + lastmon + '/0' + '\\')">＜</a> ';
+    htmldata += year + '年' + mon + '月 ';
+    htmldata += '<a href="javascript:showCalendar(\\'' + nextyear + '/' + nextmon + '/0' + '\\')">＞</a> | ';
+    htmldata += '<a href="javascript:showCalendar(\\'' + thismon + '\\')">今月</a> ';
+    htmldata += '<a href="javascript:hideCalendar()">×</a><br>';
+    htmldata += outputCalendar(year, mon);
+    document.getElementById('Calendar').innerHTML = htmldata;
+    document.getElementById('Calendar').style.display = 'block';
+  }
+
+  function hideCalendar() {
+    document.getElementById('Calendar').innerHTML = '';
+    document.getElementById('Calendar').style.display = 'none';
+  }
+
+  function outputCalendar(year, month) {
+    var d = "";
+    var selectedDayArray = document.f_input.date.value.split("/", 3);
+    var nowDay = new Date();
+//    var thismon = today.getFullYear() + "/" + (parseInt(today.getMonth())+1) + "/0";
+    var dateObj = new Date(year, month-1);
+    var week = dateObj.getDay();
+    var monthDays = new Array(31,28,31,30,31,30,31,31,30,31,30,31);
+    if (((year % 4) == 0 && (year % 100) != 0) || (year % 400) == 0) {
+      monthDays[1] = 29;  // leap year
+    }
+    d += '<table border="0">';
+    d += '<tr><th>日</th><th>月</th><th>火</th><th>水</th><th>木</th><th>金</th><th>土</th></tr>';
+
+    if (week > 0) {
+        d += '<tr>';
+        for (i=0; i<week; i++) {
+            d += '<td>&nbsp;</td>';
+        }
+    }
+
+    for (i=1; i<=monthDays[month-1]; i++) {
+        if (week == 0) {
+	    d += '<tr>';
+	}
+
+	if (nowDay.getFullYear() == year && nowDay.getMonth()+1 == month && nowDay.getDate() == i) {
+	    // 今日のセル
+            d += '<td style="background-color: #b6e315"><a href="javascript:setDateOfCalendar(\\'' + year + '/' + month + '/' + i + '\\')">' + i + '</a></td>';
+	} else if (parseInt(selectedDayArray[0]) == year && parseInt(selectedDayArray[1]) == month && parseInt(selectedDayArray[2]) == i) {
+	    // 選択された日付のセル
+            d += '<td style="background-color: #aac0f5"><a href="javascript:setDateOfCalendar(\\'' + year + '/' + month + '/' + i + '\\')">' + i + '</a></td>';
+	} else {
+            d += '<td><a href="javascript:setDateOfCalendar(\\'' + year + '/' + month + '/' + i + '\\')">' + i + '</a></td>';
+	}
+        if (week == 6) {
+            d += '</tr>';
+	    week = 0;
+        } else {
+	    week += 1;
+	}
+    }
+    d += '</table>';
+    return d;
+  }
+
+  function setDateOfCalendar(date) {
+    document.f_input.date.value = date;
+    hideCalendar();
+  }
 -->
 </script>
 
@@ -240,7 +325,8 @@ sub print_input_form {
 <form action="$ENV{'SCRIPT_NAME'}" name="f_input" onSubmit="return check_inform()" method="post">
 <input type="hidden" name="mode" value="confirm_input">
 <tt>月／日　</tt>
-<input type="text" name="date" size="20" tabindex="1" autocomplete="off"><br>
+<input type="text" name="date" size="20" tabindex="1" autocomplete="off" onClick="showCalendar(document.f_input.date.value)" readonly><br>
+<div id="Calendar" style="display:none"></div>
 <tt>分類　　</tt>
 <select name="category" tabindex="2">
 <option value="">--</option>
