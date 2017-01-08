@@ -570,6 +570,45 @@ EOF
     }
     document.fym.submit();
   }
+
+  function shiftMon(m) {
+    if(isNumber(document.fym.year.value) == false) {
+      alert("年を修正してください");
+      return;
+    }
+
+    if(isNumber(document.fym.mon.value) == false) {
+      alert("月を修正してください");
+      return;
+    }
+
+    var shift_mon = parseInt(document.fym.mon.value) + m;
+    if (shift_mon < 1) {
+      document.fym.mon.value  = 12;
+      document.fym.year.value = parseInt(document.fym.year.value) - 1;
+    } else if (shift_mon > 12) {
+      document.fym.mon.value  = 1;
+      document.fym.year.value = parseInt(document.fym.year.value) + 1;
+    } else {
+      document.fym.mon.value  = shift_mon;
+    }
+
+    if(document.fym.year.value < 2000) {
+      alert("2000年より前には遷移できません");
+      document.fym.mon.value  = 1;
+      document.fym.year.value = 2000;
+      return;
+    }
+
+    if(document.fym.year.value > 2031) {
+      alert("2031年より後には遷移できません");
+      document.fym.mon.value  = 12
+      document.fym.year.value = 2031;
+      return;
+    }
+
+    document.fym.submit();
+  }
 -->
 </script>
 <div style="width: 700px; text-align: right;">
@@ -590,6 +629,8 @@ EOF
   }
   $mes = <<EOF;
 </select>月
+<a href="javascript:shiftMon(-1)">&lt;先月</a>
+<a href="javascript:shiftMon(1)">翌月&gt;</a>
 </form></span>
 <span style="float: right">
 <table class="tb1" style="margin-left: auto; margin-right: 0px">
@@ -727,6 +768,9 @@ EOF
   }
   $mes = <<EOF;
 </select>月
+&nbsp;
+<a href="javascript:shiftMon(-1)">&lt;先月</a>
+<a href="javascript:shiftMon(1)">翌月&gt;</a>
 </form>
 <script type="text/javascript">
 <!--
@@ -743,9 +787,55 @@ EOF
       return;
     }
 
-    if(document.fym.year.value < 2000 || document.fym.year.value > 2031) {
+    if(isNumber(document.fym.mon.value) == false) {
+      alert("月を修正してください");
       return;
     }
+
+    if(document.fym.year.value < 2000 || document.fym.year.value > 2031) {
+      alert("範囲外の日時のため遷移できません");
+      return;
+    }
+
+    document.fym.submit();
+  }
+
+  function shiftMon(m) {
+    if(isNumber(document.fym.year.value) == false) {
+      alert("年を修正してください");
+      return;
+    }
+
+    if(isNumber(document.fym.mon.value) == false) {
+      alert("月を修正してください");
+      return;
+    }
+
+    var shift_mon = parseInt(document.fym.mon.value) + m;
+    if (shift_mon < 1) {
+      document.fym.mon.value  = 12;
+      document.fym.year.value = parseInt(document.fym.year.value) - 1;
+    } else if (shift_mon > 12) {
+      document.fym.mon.value  = 1;
+      document.fym.year.value = parseInt(document.fym.year.value) + 1;
+    } else {
+      document.fym.mon.value  = shift_mon;
+    }
+
+    if(document.fym.year.value < 2000) {
+      alert("2000年より前には遷移できません");
+      document.fym.mon.value  = 1;
+      document.fym.year.value = 2000;
+      return;
+    }
+
+    if(document.fym.year.value > 2031) {
+      alert("2031年より後には遷移できません");
+      document.fym.mon.value  = 12
+      document.fym.year.value = 2031;
+      return;
+    }
+
     document.fym.submit();
   }
 -->
