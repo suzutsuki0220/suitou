@@ -272,7 +272,6 @@ sub print_input_form {
     var d = "";
     var selectedDayArray = document.f_input.date.value.split("/", 3);
     var nowDay = new Date();
-//    var thismon = today.getFullYear() + "/" + (parseInt(today.getMonth())+1) + "/0";
     var dateObj = new Date(year, month-1);
     var week = dateObj.getDay();
     var monthDays = new Array(31,28,31,30,31,30,31,31,30,31,30,31);
@@ -324,10 +323,14 @@ sub print_input_form {
 <h2>出納入力画面</h2>
 <form action="$ENV{'SCRIPT_NAME'}" name="f_input" onSubmit="return check_inform()" method="post">
 <input type="hidden" name="mode" value="confirm_input">
-<tt>月／日　</tt>
-<input type="text" name="date" size="20" tabindex="1" autocomplete="off" onClick="showCalendar(document.f_input.date.value)" readonly><br>
+<ul>
+<li class="date">
+<label for="date">月／日</label>
+<input type="text" name="date" size="20" tabindex="1" autocomplete="off" onClick="showCalendar(document.f_input.date.value)" readonly>
 <div id="Calendar" style="display:none"></div>
-<tt>分類　　</tt>
+</li>
+<li class="category">
+<label for="category">分類</label>
 <select name="category" tabindex="2">
 <option value="">--</option>
 EOF
@@ -336,15 +339,26 @@ EOF
     print "<option>" . encode('utf-8', $item) . "</option>";
   }
   $mes = <<EOF;
-</select><br>
-<tt>摘要　　</tt>
-<input type="text" name="summary" size="25" maxlength="512" tabindex="3" autofocus autocomplete="off"><br>
-<tt>支出金額</tt>
-<input type="number" name="expend" size="10" tabindex="4" onChange="hankaku_expend()" autocomplete="off"><br>
-<tt>収入金額</tt>
-<input type="number" name="income" size="10" tabindex="5" autocomplete="off"><br>
-<tt>備考　　</tt>
-<input type="text" name="note" size="25" maxlength="512" tabindex="6" autocomplete="off"><br><br>
+</select>
+</li>
+<li class="summary">
+<label for="summary">摘要</label>
+<input type="text" name="summary" size="25" maxlength="512" tabindex="3" autofocus autocomplete="off">
+</li>
+<li class="expend">
+<label for="expend">支出金額</label>
+<input type="number" name="expend" size="10" tabindex="4" onChange="hankaku_expend()" autocomplete="off">
+</li>
+<li class="income">
+<label for="income">収入金額</label>
+<input type="number" name="income" size="10" tabindex="5" autocomplete="off">
+</li>
+<li class="note">
+<label for="note">備考</label>
+<input type="text" name="note" size="25" maxlength="512" tabindex="6" autocomplete="off">
+</li>
+</ul>
+<br><br>
 <div class="center"><input type="submit" class="submit_button" name="b_submit" tabindex="7" value="送信"></div><br>
 </form>
 <hr>

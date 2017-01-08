@@ -169,22 +169,64 @@ sub header_smp {
     text-align: center;
   }
 
+  ul li {
+    list-style: none;
+  }
+
+  ul {
+    margin-left: 10px;
+    padding-left: 0px;
+  }
+
+  input, select {
+    border: 2px solid #d0d0d0;
+    border-radius: 5px;
+    font-size: 120%;
+    margin: 3px 0px;
+  }
+
+  input[type="text"] {
+    width: 375px;
+  }
+
+  label {
+    width: 70px;
+    float: left;
+    margin: 3px 5px 3px 0px;
+  }
+
+  \@media screen and (max-width: 480px)
+  {
+    input[type="text"] {
+      width: 77%;
+    }
+
+    label {
+      width: 20%;
+      float: left;
+    }
+  }
+
   input.submit_button {
+    font-size: 100%;
+    font-weight: bold;
     background-color: #4169e1;
     color: #ffffff;
     font-family: Arial;
     border: 1px solid #ff9966;
     margin: 0px;
-    padding: 5px 50px 5px 50px;
+    padding: 10px 50px 10px 50px;
   }
 
   input.normal_button {
+    font-size: 100%;
+    font-weight: bold;
     background-color: #ffffff;
     color: #000000;
     font-family: Arial;
     border: 1px solid #ff9966;
     margin: 0px;
-    padding: 5px 35px 5px 35px;
+    padding: 10px 35px 10px 35px;
   }
 
   #Calendar {
