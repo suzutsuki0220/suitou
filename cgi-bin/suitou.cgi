@@ -584,13 +584,13 @@ EOF
 
     var shift_mon = parseInt(document.fym.mon.value) + m;
     if (shift_mon < 1) {
-      document.fym.mon.value  = 12;
+      document.fym.mon[11].selected = true;
       document.fym.year.value = parseInt(document.fym.year.value) - 1;
     } else if (shift_mon > 12) {
-      document.fym.mon.value  = 1;
+      document.fym.mon[0].selected = true;
       document.fym.year.value = parseInt(document.fym.year.value) + 1;
     } else {
-      document.fym.mon.value  = shift_mon;
+      document.fym.mon[shift_mon-1].selected = true;
     }
 
     if(document.fym.year.value < 2000) {
@@ -813,13 +813,13 @@ EOF
 
     var shift_mon = parseInt(document.fym.mon.value) + m;
     if (shift_mon < 1) {
-      document.fym.mon.value  = 12;
+      document.fym.mon[11].selected = true;
       document.fym.year.value = parseInt(document.fym.year.value) - 1;
     } else if (shift_mon > 12) {
-      document.fym.mon.value  = 1;
+      document.fym.mon[0].selected = true;
       document.fym.year.value = parseInt(document.fym.year.value) + 1;
     } else {
-      document.fym.mon.value  = shift_mon;
+      document.fym.mon[shift_mon-1].selected = true;
     }
 
     if(document.fym.year.value < 2000) {
