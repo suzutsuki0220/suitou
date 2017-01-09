@@ -134,6 +134,41 @@ print <<EOF;
   table.tb1 table td {
     border: 0px solid #666666;
   }
+  table.tb1.tbtotal {
+    margin-left: auto;
+    margin-right: 0px;
+  }
+  table.large-only {
+    display: table;
+  }
+  table.small-only {
+    display: none;
+  }
+  textarea.memo {
+    width: 700px;
+    height: 45px;
+    font-size: 9pt;
+    resize:none;
+  }
+  div#MemoButton {
+    text-align: right;
+    width: 700px;
+  }
+  \@media screen and (max-width: 720px) {
+    table.large-only {
+      display: none;
+    }
+    table.small-only {
+      display: table;
+      width: 100%;
+    }
+    textarea.memo {
+      width: 100%;
+    }
+    div#MemoButton {
+      width: 100%;
+    }
+  }
 -->
 </style>
 <title>${title}</title>

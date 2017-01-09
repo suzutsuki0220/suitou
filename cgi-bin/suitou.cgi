@@ -633,7 +633,7 @@ EOF
 <a href="javascript:shiftMon(1)">翌月&gt;</a>
 </form></span>
 <span style="float: right">
-<table class="tb1" style="margin-left: auto; margin-right: 0px">
+<table class="tb1 large-only">
 <tr><th width="80">支出合計</th><th width="80">収入合計</th><th width="80">差引</th></tr>
 <tr><td>￥${expend}</td><td>￥${income}</td><td>
 EOF
@@ -662,6 +662,21 @@ EOF
 </table></span></div>
 <script type="text/javascript">
 <!--
+  // 狭い画面用の合計出力処理
+  document.write('<br clear="all"><div style="text-align: right"><table class="tb1 small-only" style="width: 200px">');
+  document.write('<tr><th>支出合計</th><td>￥${expend}</td></tr>');
+  document.write('<tr><th>収入合計</th><td>￥${income}</td></tr>');
+  document.write('<tr><th>差引</th>');
+  if (parseInt("${remain}".replace(/,/g,"")) < 0) {
+    document.write('<td><span style="color: #ff0000">￥${remain}</span></td></tr>');
+  } else {
+    document.write('<td>￥${remain}</td></tr>');
+  }
+  document.write('</table></div>');
+-->
+</script>
+<script type="text/javascript">
+<!--
 function confirmEditMemo() {
   if(confirm("メモを編集しますか?")) {
     document.memo_top.mode.value = "memo_edit";
@@ -686,8 +701,8 @@ function hideMemoButton() {
 <input type="hidden" name="mode" value="memo_do_edit">
 <input type="hidden" name="year" value="${year}">
 <input type="hidden" name="mon" value="${mon}">
-<textarea rows="3" readonly name="memo" style="width: 700px; height: 45px; font-size: 9pt; resize:none" onClick="showMemoButton()">${memo_text}</textarea>
-<div style="text-align: right; width: 700px" id="MemoButton"></div>
+<textarea rows="3" readonly name="memo" class="memo" onClick="showMemoButton()">${memo_text}</textarea>
+<div id="MemoButton"></div>
 </form>
 EOF
   print(encode('utf-8', $mes));
@@ -700,14 +715,16 @@ EOF
     print(encode('utf-8', "<p>出納は登録されていません。</p>\n"));
   } else {
     $mes = <<EOF;
-<table class="tb1" width="700">
-<tr>
+<table class="tb1 large-only" id="book" width="700">
+<thead><tr>
 <th width="90">月／日</th>
 <th width="60">分類</th>
 <th width="230">摘要</th>
 <th width="70">支出金額</th>
 <th width="70" style="text-align: right;">収入金額</th>
-<th width="180">備考</th></tr>
+<th width="180">備考</th>
+</tr></thead>
+<tbody>
 EOF
     print(encode('utf-8', $mes));
     while(@row = $sth->fetchrow_array) {
@@ -729,7 +746,41 @@ EOF
       print "<td>".encode('utf-8', $row[7])."</td>\n";
       print "</tr>\n";
     }
-    print "</table>\n";
+    $mes = <<EOF;
+</tbody>
+</table>
+<script type="text/javascript">
+<!--
+  // 狭い画面用の出納出力処理
+  document.write('<table class="tb1 small-only">');
+  var rows = document.getElementById('book').rows;
+
+  for (i=1; i<rows.length; i++) {  // 0番目は名前
+    var row = rows.item(i);
+    document.write('<tr><td>');
+    document.write('<table border="0" style="width: 100%">');
+    document.write('<tr><td width="90" colspan="2">'+ row.cells.item(0).firstChild.nodeValue + '</td>');
+    document.write('<td></td>')+
+    document.write('<td width="70" style="text-align: right;">'+ row.cells.item(4).firstChild.nodeValue + '</td>');
+    document.write('<td width="70" style="text-align: right;">'+ row.cells.item(3).firstChild.nodeValue + '</td>');
+    document.write('</tr><tr>');
+
+    document.write('<th width="60" style="text-align: center;">'+ row.cells.item(1).firstChild.nodeValue + '</td>');
+    document.write('<td colspan="4"><a href="' + row.cells.item(2).firstChild.href + '">' + row.cells.item(2).firstChild.firstChild.nodeValue + '</a></td></tr>');
+
+    var note = row.cells.item(5).firstChild.nodeValue;
+    if (note.length != 0) {
+      document.write('<tr><th width="20%" style="text-align: center;">備考</td><td colspan="4">'+ note + '</td></tr>');
+    }
+    document.write('</table>');
+    document.write('</td></tr>');
+  }
+
+  document.write('</table>');
+-->
+</script>
+EOF
+    print(encode('utf-8', $mes));
   }
 
   $sth->finish();
