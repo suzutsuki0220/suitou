@@ -77,8 +77,6 @@ my $mode = scalar($form->param('mode'));
 
 if( $mode eq '' || $mode eq 'reg') {
   &print_input_form();
-} elsif( $mode eq 'confirm_input' ) {
-  &confirm_input();
 } elsif( $mode eq 'do_input' ) {
   &do_input();
 } elsif( $mode eq 'view' ) {
@@ -126,7 +124,9 @@ sub print_input_form {
   $year += 1900;
   $mon += 1;
 
-  if (! $q_date || $q_date eq '') {
+  if ($mode eq 'do_input') {
+    $q_date = "${year}/${mon}/${day}";
+  } elsif (! $q_date || $q_date eq '') {
     $q_date = "${year}/${mon}/${day}";
     $q_year = $year;
     $q_mon  = $mon;
@@ -138,6 +138,8 @@ sub print_input_form {
   my $mes = <<EOF;
 <script type="text/JavaScript">
 <!--
+  var confirm_phase = false;
+
   function check_inform() {
     document.f_input.date.value = zenkaku2hankaku(document.f_input.date.value);
     document.f_input.summary.value = zenkaku2hankaku(document.f_input.summary.value);
@@ -168,26 +170,6 @@ sub print_input_form {
     if(ymh[2].length == 0 || ymh[2] > 31 || ymh[2] < 1) {
       alert('日が正しくありません');
       return false;
-    }
-    if(ymh[0] < ${year}) {
-      if( ! window.confirm('年が過去ですが、よろしいですか？')) {
-        return false;
-      }
-    }
-    if(ymh[0] > ${year}) {
-      if( ! window.confirm('年が未来ですが、よろしいですか？')) {
-        return false;
-      }
-    }
-    if(ymh[0] == ${year} && ymh[1] > ${mon}) {
-      if( ! window.confirm('未来の月ですが、よろしいですか？')) {
-        return false;
-      }
-    }
-    if(ymh[0] == ${year} && ymh[1] < ${mon}) {
-      if( ! window.confirm('過去の月ですが、よろしいですか？')) {
-        return false;
-      }
     }
     if(! document.f_input.expend.value || document.f_input.expend.value <= 0) {
       document.f_input.expend.value = 0;
@@ -223,7 +205,16 @@ sub print_input_form {
       alert('摘要を入れてください');
       return false;
     }
+
     return true;
+  }
+
+  function onInputSubmit() {
+    document.f_input.b_submit.disabled = true;
+    document.f_input.b_back.disabled = true;
+
+    document.f_input.b_submit.value = "送信中";
+    document.f_input.category.disabled = false;
   }
 
   function zenkaku2hankaku(s) {
@@ -235,6 +226,10 @@ sub print_input_form {
   }
 
   function showCalendar(d) {
+    if (confirm_phase === true) {
+        return;
+    }
+
     var dayArray = d.toString().split("/", 3);
     var year = parseInt(dayArray[0]);
     var mon = parseInt(dayArray[1]);
@@ -317,11 +312,50 @@ sub print_input_form {
     document.f_input.date.value = date;
     hideCalendar();
   }
+
+  function confirmInput() {
+    if (check_inform() === false) {
+        return;
+    }
+
+    confirm_phase = true;
+
+    document.title = "確認画面";
+    document.getElementById("subtitle").innerHTML = "確認画面";
+    document.getElementById("message").innerHTML  = "この内容で登録します。";
+    document.f_input.mode.value = "do_input";
+    document.f_input.date.readOnly = true;
+    document.f_input.category.disabled = true;
+    document.f_input.summary.readOnly = true;
+    document.f_input.expend.readOnly = true;
+    document.f_input.income.readOnly = true;
+    document.f_input.note.readOnly = true;
+
+    document.getElementById("button_area").innerHTML = "<input type=\\"submit\\" class=\\"submit_button\\" name=\\"b_submit\\" value=\\"登録\\">&nbsp;<input type=\\"button\\" class=\\"normal_button\\" onClick=\\"cancelConfirm()\\" name=\\"b_back\\" value=\\"戻る\\">";
+  }
+
+  function cancelConfirm() {
+    confirm_phase = false;
+
+    document.title = "出納入力画面";
+    document.getElementById("subtitle").innerHTML = "出納入力画面";
+    document.getElementById("message").innerHTML  = "";
+    document.f_input.mode.value = "reg";
+    document.f_input.date.readOnly = false;
+    document.f_input.category.disabled = false;
+    document.f_input.summary.readOnly = false;
+    document.f_input.expend.readOnly = false;
+    document.f_input.income.readOnly = false;
+    document.f_input.note.readOnly = false;
+
+    document.getElementById("button_area").innerHTML = "<input type=\\"button\\" class=\\"submit_button\\" name=\\"b_submit\\" tabindex=\\"7\\" value=\\"送信\\" onClick=\\"confirmInput()\\">";
+  }
 -->
 </script>
 
-<h2>出納入力画面</h2>
-<form action="$ENV{'SCRIPT_NAME'}" name="f_input" onSubmit="return check_inform()" method="post">
+<h2 id="subtitle">出納入力画面</h2>
+<p id="message"></p>
+<form action="$ENV{'SCRIPT_NAME'}" name="f_input" onSubmit="onInputSubmit()" method="post">
 <input type="hidden" name="mode" value="confirm_input">
 <ul>
 <li class="date">
@@ -347,7 +381,7 @@ EOF
 </li>
 <li class="expend">
 <label for="expend">支出金額</label>
-<input type="number" name="expend" size="10" tabindex="4" onChange="hankaku_expend()" autocomplete="off">
+<input type="number" name="expend" size="10" tabindex="4" autocomplete="off">
 </li>
 <li class="income">
 <label for="income">収入金額</label>
@@ -359,7 +393,7 @@ EOF
 </li>
 </ul>
 <br><br>
-<div class="center"><input type="submit" class="submit_button" name="b_submit" tabindex="7" value="送信"></div><br>
+<div id="button_area" class="center"><input type="button" class="submit_button" name="b_submit" tabindex="7" value="送信" onClick="confirmInput()"></div><br>
 </form>
 <hr>
 <a href="$ENV{'SCRIPT_NAME'}?mode=view&year=${q_year}&mon=${q_mon}">出納出力</a> | 
@@ -367,11 +401,16 @@ EOF
 <script type="text/javascript">
 <!--
   document.f_input.date.value = "$q_date";
-  document.f_input.category.value = "$q_category";
-  document.f_input.summary.value = "$q_summary";
-  document.f_input.expend.value = "$q_expend";
-  document.f_input.income.value = "$q_income";
-  document.f_input.note.value = "$q_note";
+
+  if ("${mode}" === "do_input") {
+    document.getElementById('message').innerHTML = "[${q_summary}] を登録しました";
+  } else {
+    document.f_input.category.value = "$q_category";
+    document.f_input.summary.value = "$q_summary";
+    document.f_input.expend.value = "$q_expend";
+    document.f_input.income.value = "$q_income";
+    document.f_input.note.value = "$q_note";
+  }
 -->
 </script>
 EOF
@@ -381,60 +420,7 @@ EOF
   exit(0);
 }
 
-sub confirm_input {
-  my $q_date     = &escape_html(decode('utf-8', scalar($form->param('date'))));
-  my $q_category = &escape_html(decode('utf-8', scalar($form->param('category'))));
-  my $q_summary  = &escape_html(decode('utf-8', scalar($form->param('summary'))));
-  my $q_expend   = &escape_html(decode('utf-8', scalar($form->param('expend'))));
-  my $q_income   = &escape_html(decode('utf-8', scalar($form->param('income'))));
-  my $q_note     = &escape_html(decode('utf-8', scalar($form->param('note'))));
-
-  &header_smp(encode('utf-8', '確認画面'));
-
-  my $mes = <<EOF;
-<script type="text/javascript">
-<!--
-  function disable_button() {
-    document.f_input.b_submit.disabled = true;
-    document.f_input.b_back.disabled = true;
-  }
-
-  function back_input() {
-    document.f_input.mode.value = "reg";
-    document.f_input.submit();
-  }
--->
-</script>
-<h2>確認画面</h2>
-<p>この内容で登録します。</p>
-<form action="$ENV{'SCRIPT_NAME'}" name="f_input" method="post" onSubmit="disable_button()">
-<input type="hidden" name="mode" value="do_input">
-<tt>月／日　</tt>
-<input type="text" name="date" size="20" value="$q_date" readonly><br>
-<tt>分類　　</tt>
-<input type="text" name="category" size="10" value="$q_category" readonly><br>
-<tt>摘要　　</tt>
-<input type="text" name="summary" size="25" value="$q_summary" readonly><br>
-<tt>支出金額</tt>
-<input type="text" name="expend" size="10" value="$q_expend" readonly><br>
-<tt>収入金額</tt>
-<input type="text" name="income" size="10" value="$q_income" readonly><br>
-<tt>備考　　</tt>
-<input type="text" name="note" size="25" value="$q_note" readonly><br><br>
-<div class="center">
-<input type="submit" class="submit_button" name="b_submit" value="登録">&nbsp;
-<input type="button" class="normal_button" onClick="back_input()" name="b_back" value="戻る">
-</div><br>
-</form>
-EOF
-  print(encode('utf-8', $mes));
-  &tail();
-  exit(0);
-}
-
 sub do_input {
-  &header_smp(encode('utf-8', '登録しました'));
-
   my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
 
   my $q_date     = &escape_html(decode('utf-8', scalar($form->param('date'))));
@@ -452,15 +438,19 @@ sub do_input {
      $mon  !~ /^\d+$/ || $mon  < 0    || $mon  > 13   ||
      $day  !~ /^\d+$/ || $day  < 0    || $day  > 32 )
   {
+    &header_smp(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "月／日が不正です。"));
   }
   if($q_category eq "''") {
+    &header_smp(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "分類が入っていません。"));
   }
   if($q_expend !~ /^\d+$/ || $q_expend < 0 || $q_expend > 1000000) {
+    &header_smp(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "支出が不正です。"));
   }
   if($q_income !~ /^\d+$/ || $q_income < 0 || $q_income > 1000000) {
+    &header_smp(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "収入が不正です。"));
   }
 
@@ -474,34 +464,14 @@ sub do_input {
   };
 
   if($@) {
-    &error(encode('utf-8', "登録に失敗しました"));
+    $dbh->disconnect;
+    &header_smp(encode('utf-8', '登録エラー'));
+    &error(encode('utf-8', "登録に失敗しました - $@"));
   }
 
   $dbh->disconnect;
 
-  my $mes = <<EOF;
-<h2>登録しました。</h2>
-<form action="$ENV{'SCRIPT_NAME'}" name="f" method="POST">
-<div class="center">
-<input type="hidden" name="mode" value="reg">
-<input type="hidden" name="year" value="${year}">
-<input type="hidden" name="mon"  value="${mon}">
-<input type="submit" class="normal_button" style="width: 160px; margin-bottom: 5px;" value="入力画面に戻る"><br>
-<input type="button" class="normal_button" style="width: 160px; margin-top: 5px" onClick="gotoView()" value="出納を見る">
-</div>
-</form>
-<script type="text/javascript">
-<!--
-function gotoView() {
-  document.f.mode.value = "view";
-  document.f.submit();
-}
--->
-</script>
-EOF
-  print(encode('utf-8', $mes));
-  &tail();
-  exit(0);
+  &print_input_form();
 }
 
 

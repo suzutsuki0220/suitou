@@ -48,6 +48,7 @@ if(isSP()) {
 <meta name="apple-touch-fullscreen" content="YES">
 <meta http-equiv="Content-Script-Type" content="text/javascript">
 <meta http-equiv="Content-Style-Type" content="text/css">
+<meta name="format-detection" content="telephone=no">
 <!-- <meta name="apple-mobile-web-app-capable" content="yes"> -->
 <!-- <meta name="apple-mobile-web-app-status-bar-style" content="black"> -->
 EOF
@@ -194,6 +195,7 @@ sub header_smp {
 <meta name="apple-touch-fullscreen" content="YES">
 <meta http-equiv="Content-Script-Type" content="text/javascript">
 <meta http-equiv="Content-Style-Type" content="text/css">
+<meta name="format-detection" content="telephone=no">
 <style type="text/css">
 <!--
   body {
