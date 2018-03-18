@@ -36,11 +36,12 @@ use CGI;
 #      -> summary VARCHAR(512) NOT NULL,
 #      -> expend MEDIUMINT UNSIGNED DEFAULT 0 NOT NULL,
 #      -> income MEDIUMINT UNSIGNED DEFAULT 0 NOT NULL,
-#      -> note VARCHAR(512) );
+#      -> note VARCHAR(512),
+#      -> user VARCHAR(64) );
 #  mysql> GRANT SELECT,UPDATE,INSERT,DELETE ON suitou.* TO mysql@localhost IDENTIFIED BY 'mysql';
-#  mysql> CREATE INDEX idx_year_mon ON webform (year, month);
-#  mysql> CREATE INDEX idx_year ON webform (year);
-#  mysql> CREATE INDEX idx_month ON webform (month);
+#  mysql> CREATE INDEX idx_year_mon ON suitou.webform (year, month);
+#  mysql> CREATE INDEX idx_year ON suitou.webform (year);
+#  mysql> CREATE INDEX idx_month ON suitou.webform (month);
 #
 # ---
 require './util.pl';
