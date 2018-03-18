@@ -27,7 +27,7 @@ use CGI;
 # ---
 #  # mysql -u root -p
 #  mysql> CREATE DATABASE suitou;
-#  mysql>CREATE TABLE suitou.webform (
+#  mysql> CREATE TABLE suitou.webform (
 #      -> id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
 #      -> year INT NOT NULL,
 #      -> month INT NOT NULL,
@@ -42,6 +42,11 @@ use CGI;
 #  mysql> CREATE INDEX idx_year_mon ON suitou.webform (year, month);
 #  mysql> CREATE INDEX idx_year ON suitou.webform (year);
 #  mysql> CREATE INDEX idx_month ON suitou.webform (month);
+#  mysql> CREATE TABLE suitou.memo (
+#      -> year INT NOT NULL,
+#      -> month INT NOT NULL,
+#      -> text TEXT,
+#      -> PRIMARY KEY (year, month) );
 #
 # ---
 require './util.pl';
