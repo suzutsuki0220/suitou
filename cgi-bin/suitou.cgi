@@ -15,6 +15,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+use strict;
 use utf8;
 use Encode;
 use Encode::JP;
@@ -85,7 +86,7 @@ my @category = (
 
 my $mode = scalar($form->param('mode'));
 
-if( $mode eq '' || $mode eq 'reg') {
+if( $mode eq '' || $mode eq 'input' || $mode eq 'edit' ) {
   &print_input_form();
 } elsif( $mode eq 'do_input' ) {
   &do_input();
@@ -110,7 +111,8 @@ if( $mode eq '' || $mode eq 'reg') {
 } elsif( $mode eq 'count' ) {
   &data_count();
 } else {
-  &print_input_form();
+  &header_smp(encode('utf-8', 'エラー'));
+  &error(encode('utf-8', '不正なパラメータ'));
 }
 
 exit(0);
@@ -125,6 +127,7 @@ sub print_input_form {
   my $q_expend   = &escape_html(decode('utf-8', scalar($form->param('expend'))));
   my $q_income   = &escape_html(decode('utf-8', scalar($form->param('income'))));
   my $q_note     = &escape_html(decode('utf-8', scalar($form->param('note'))));
+  my $q_id       = &escape_html(scalar $form->param('id'));
 
   my($q_year, $q_mon, $q_day) = split(/[\/\-]/, $q_date);
 
@@ -134,6 +137,29 @@ sub print_input_form {
 
   if ($mode eq 'do_input') {
     $q_date = "${year}/${mon}/${day}";
+  } elsif ($mode eq 'edit') {
+    if(! $q_id || $q_id eq '') {
+      &header_smp(encode('utf-8', 'エラー'));
+      &error(encode('utf-8', 'IDが指定されていません'));
+    }
+    my $dbh = connectDatabase();
+    my $query  = "SELECT year, month, day, category, summary, expend, income, note ";
+       $query .= "FROM webform WHERE id=${q_id};";
+
+    my $sth = $dbh->prepare($query);
+    $sth->execute();
+    if ($sth->rows > 0) {
+      my @row = $sth->fetchrow_array;
+      $q_date     = &escape_html("$row[0]/$row[1]/$row[2]");
+      $q_category = &escape_wquot($row[3]);
+      $q_summary  = &escape_wquot($row[4]);
+      $q_expend   = &escape_html($row[5]);
+      $q_income   = &escape_html($row[6]);
+      $q_note     = &escape_wquot($row[7]);
+    } else {
+      &header_smp(encode('utf-8', 'エラー'));
+      &error(encode('utf-8', 'データが見つかりませんでした'));
+    }
   } elsif (! $q_date || $q_date eq '') {
     $q_date = "${year}/${mon}/${day}";
     $q_year = $year;
@@ -218,11 +244,28 @@ sub print_input_form {
   }
 
   function onInputSubmit() {
+    if (document.f_input.mode.value === "do_edit") {
+      if(! document.f_input.expend.value && ! document.f_input.income.value && ! document.f_input.summary.value )
+      {
+        if(confirm("この項目を削除してよろしいですか?")) {
+          document.f_input.mode.value = "do_delete";
+        } else {
+          return false;
+        }
+      } else {
+        if (check_inform() === false) {
+          return false;
+        }
+      }
+    }
+
     document.f_input.b_submit.disabled = true;
     document.f_input.b_back.disabled = true;
 
     document.f_input.b_submit.value = "送信中";
     document.f_input.category.disabled = false;
+
+    return true;
   }
 
   function zenkaku2hankaku(s) {
@@ -328,10 +371,6 @@ sub print_input_form {
 
     confirm_phase = true;
 
-    document.title = "確認画面";
-    document.getElementById("subtitle").innerHTML = "確認画面";
-    document.getElementById("message").innerHTML  = "この内容で登録します。";
-    document.f_input.mode.value = "do_input";
     document.f_input.date.readOnly = true;
     document.f_input.category.disabled = true;
     document.f_input.summary.readOnly = true;
@@ -339,16 +378,13 @@ sub print_input_form {
     document.f_input.income.readOnly = true;
     document.f_input.note.readOnly = true;
 
-    document.getElementById("button_area").innerHTML = "<input type=\\"submit\\" class=\\"submit_button\\" name=\\"b_submit\\" value=\\"登録\\">&nbsp;<input type=\\"button\\" class=\\"normal_button\\" onClick=\\"cancelConfirm()\\" name=\\"b_back\\" value=\\"戻る\\">";
+    changeForm('confirm_input');
   }
 
   function cancelConfirm() {
     confirm_phase = false;
 
-    document.title = "出納入力画面";
-    document.getElementById("subtitle").innerHTML = "出納入力画面";
-    document.getElementById("message").innerHTML  = "";
-    document.f_input.mode.value = "reg";
+    document.f_input.mode.value = "input";
     document.f_input.date.readOnly = false;
     document.f_input.category.disabled = false;
     document.f_input.summary.readOnly = false;
@@ -356,15 +392,48 @@ sub print_input_form {
     document.f_input.income.readOnly = false;
     document.f_input.note.readOnly = false;
 
-    document.getElementById("button_area").innerHTML = "<input type=\\"button\\" class=\\"submit_button\\" name=\\"b_submit\\" tabindex=\\"7\\" value=\\"送信\\" onClick=\\"confirmInput()\\">";
+    changeForm('input');
+  }
+
+  function backView() {
+    document.f_input.mode.value = "view";
+    document.f_input.submit();
+  }
+
+  function changeForm(pattern) {
+    var html = "";
+    document.getElementById('complement').innerHTML = "";
+
+    if (pattern === "confirm_input") {
+      document.title = "確認画面";
+      document.getElementById("subtitle").innerHTML = "確認画面";
+      document.getElementById("message").innerHTML  = "この内容で登録します。";
+      document.f_input.mode.value = "do_input";
+      html = "<input type=\\"submit\\" class=\\"submit_button\\" name=\\"b_submit\\" value=\\"登録\\">&nbsp;<input type=\\"button\\" class=\\"normal_button\\" onClick=\\"cancelConfirm()\\" name=\\"b_back\\" value=\\"戻る\\">";
+    } else if (pattern === "edit") {
+      document.title = "編集";
+      document.getElementById("subtitle").innerHTML = "出納編集画面";
+      document.getElementById("message").innerHTML  = "";
+      document.getElementById('complement').innerHTML = "※項目を削除するには全ての欄を空にしてください";
+      document.f_input.mode.value = "do_edit";
+      html = "<input type=\\"submit\\" class=\\"submit_button\\" name=\\"b_submit\\" value=\\"送信\\">&nbsp;<input type=\\"button\\" class=\\"normal_button\\" onClick=\\"backView()\\" name=\\"b_back\\" value=\\"戻る\\">";
+    } else {  // if (pattern === "input") {
+      document.title = "出納入力画面";
+      document.getElementById("subtitle").innerHTML = "出納入力画面";
+      document.getElementById("message").innerHTML  = "";
+      html = "<input type=\\"button\\" class=\\"submit_button\\" name=\\"b_submit\\" tabindex=\\"7\\" value=\\"送信\\" onClick=\\"confirmInput()\\">";
+    }
+
+    document.getElementById("button_area").innerHTML = html;
   }
 -->
 </script>
 
 <h2 id="subtitle">出納入力画面</h2>
 <p id="message"></p>
-<form action="$ENV{'SCRIPT_NAME'}" name="f_input" onSubmit="onInputSubmit()" method="post">
-<input type="hidden" name="mode" value="confirm_input">
+<form action="$ENV{'SCRIPT_NAME'}" name="f_input" onSubmit="return onInputSubmit()" method="post">
+<input type="hidden" name="mode" value="${mode}">
+<input type="hidden" name="id" value="${q_id}">
 <ul>
 <li class="date">
 <label for="date">月／日</label>
@@ -377,7 +446,7 @@ sub print_input_form {
 <option value="">--</option>
 EOF
   print encode('utf-8', $mes);
-  foreach $item (@category) {
+  foreach my $item (@category) {
     print "<option>" . encode('utf-8', $item) . "</option>";
   }
   $mes = <<EOF;
@@ -400,7 +469,9 @@ EOF
 <input type="text" name="note" size="25" maxlength="512" tabindex="6" autocomplete="off">
 </li>
 </ul>
-<br><br>
+<br>
+<div id="complement"></div>
+<br>
 <div id="button_area" class="center"><input type="button" class="submit_button" name="b_submit" tabindex="7" value="送信" onClick="confirmInput()"></div><br>
 </form>
 <hr>
@@ -409,6 +480,7 @@ EOF
 <script type="text/javascript">
 <!--
   document.f_input.date.value = "$q_date";
+  changeForm('${mode}');
 
   if ("${mode}" === "do_input") {
     document.getElementById('message').innerHTML = "[${q_summary}] を登録しました";
@@ -598,7 +670,7 @@ EOF
 EOF
   print(encode('utf-8', $mes));
 
-  for($i=1;$i<=12;$i++) {
+  for(my $i=1; $i<=12; $i++) {
     if($i==$mon) {
       print "<option selected>$i</option>";
     } else {
@@ -624,7 +696,7 @@ EOF
   }
 
   # メモ欄
-  my $memo_text;
+  my $memo_text = "";
   $query  = "SELECT text ";
   $query .= "FROM memo WHERE year = ${year} AND month = ${mon};";
   $sth = $dbh->prepare($query);
@@ -655,12 +727,6 @@ EOF
 </script>
 <script type="text/javascript">
 <!--
-function confirmEditMemo() {
-  if(confirm("メモを編集しますか?")) {
-    document.memo_top.mode.value = "memo_edit";
-    document.memo_top.submit();
-  }
-}
 function showMemoButton() {
   document.memo_top.memo.readOnly = false;
   htmldata  = '<input type="submit" value="保存">&nbsp;';
@@ -705,7 +771,7 @@ EOF
 <tbody>
 EOF
     print(encode('utf-8', $mes));
-    while(@row = $sth->fetchrow_array) {
+    while(my @row = $sth->fetchrow_array) {
       print "<tr>\n";
       for( my $i=0; $i<@row.length; $i++ ) {
         $row[$i] = &escape_html($row[$i]);
@@ -788,7 +854,7 @@ sub print_figures {
 <select name="mon" size="1" onChange="ymchange()">
 EOF
   print(encode('utf-8', $mes));
-  for($i=1;$i<=12;$i++) {
+  for(my $i=1; $i<=12; $i++) {
     if($i==$mon) {
       print "<option selected>$i</option>";
     } else {
@@ -876,6 +942,7 @@ EOF
   print(encode('utf-8', $mes));
 
   my $i;
+  my $sth;
   my $balance = 0;
   my $total_expend = 0;
   my $total_income = 0;
@@ -885,7 +952,7 @@ EOF
     my $income = 0;
     $query  = "SELECT sum(expend), sum(income) FROM webform WHERE ";
     $query .= "year = ${year} AND month = ${mon} AND day = ${i};";
-    my $sth = $dbh->prepare($query);
+    $sth = $dbh->prepare($query);
     $sth->execute();
     if ($sth->rows > 0) {
       my @row = $sth->fetchrow_array;
@@ -918,7 +985,7 @@ EOF
     }
   }
   print "</tr>\n";
-  foreach $key (@category) {
+  foreach my $key (@category) {
     if($key eq "収入") {
       next;
     }
@@ -984,7 +1051,7 @@ sub print_edit_form {
 <select name="category" tabindex="2">
 EOF
   print(encode('utf-8', $mes));
-  foreach $item (@category) {
+  foreach my $item (@category) {
     print(encode('utf-8', "<option>$item</option>"));
   }
   $mes = <<EOF;
@@ -1236,11 +1303,11 @@ sub do_memoedit() {
 
   # 年月レコードの有無を確認
   my $rec_found = 0;
-  $query  = "SELECT COUNT(*) FROM memo WHERE year=${q_year} AND month=${q_mon};";
+  my $query = "SELECT COUNT(*) FROM memo WHERE year=${q_year} AND month=${q_mon};";
   my $sth = $dbh->prepare($query);
   $sth->execute();
   if ($sth->rows > 0) {
-    @row = $sth->fetchrow_array;
+    my @row = $sth->fetchrow_array;
     $rec_found = $row[0];
   }
   $sth->finish();
@@ -1261,7 +1328,7 @@ sub do_memoedit() {
       $query .= "text='${q_memo}' WHERE year=${q_year} AND month=${q_mon};";
     }
   }
-  my $sth = $dbh->prepare($query);
+  $sth = $dbh->prepare($query);
   $sth->execute();
   $sth->finish();
 
@@ -1273,7 +1340,8 @@ END:
 }
 
 sub csv() {
-  my $filename, $query;
+  my $filename;
+  my $query;
   my $year = scalar($form->param('year'));
   my $mon  = scalar($form->param('mon'));
   if (length($year) == 0 || length($mon) == 0) {
@@ -1297,7 +1365,7 @@ sub csv() {
   print '"year","month","day","category","summary","expend","income","note"';
   print "\r\n";
   if ($sth->rows > 0) {
-    while(@row = $sth->fetchrow_array) {
+    while(my @row = $sth->fetchrow_array) {
       print '"'  . encode('cp932', $row[0]) . '"';
       print ',"' . encode('cp932', $row[1]) . '"';
       print ',"' . encode('cp932', $row[2]) . '"';
@@ -1365,6 +1433,7 @@ sub data_restore() {
       $buffer = decode('utf-8', $buffer);
     }
 
+    my @data;
     my $idx = 0;
     while(length($buffer) > 0) {
       if (substr($buffer, 0, 1) eq '"') {
@@ -1431,7 +1500,7 @@ sub data_count() {
   $sth->execute();
 
   if ($sth->rows > 0) {
-    @row = $sth->fetchrow_array;
+    my @row = $sth->fetchrow_array;
     print $row[0];
   }
 
@@ -1444,7 +1513,7 @@ sub data_count() {
 sub connectDatabase {
   my $dbh;
   eval {
-    $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+    $dbh = DBI->connect("DBI:mysql:$db_name;$db_host", $db_user, $db_pass, @db_opt);
   };
   if ($@) {
     &error(encode('utf-8', "データベースの接続失敗 - $@"));
