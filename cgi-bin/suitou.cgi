@@ -51,6 +51,10 @@ my $db_host = "localhost";
 my $db_name = "suitou";
 my @db_opt  = {RaiseError => 1, mysql_enable_utf8 => 1};
 
+if (-f "suitou_db.conf") {
+  loadConfig("suitou_db.conf");
+}
+
 my $form = eval{new CGI};
 
 # 分類
@@ -89,8 +93,6 @@ if( $mode eq '' || $mode eq 'reg') {
   &do_edit();
 } elsif( $mode eq 'do_delete' ) {
   &do_delete();
-#} elsif( $mode eq 'memo_edit' ) {
-#  &print_memoedit_form();
 } elsif( $mode eq 'memo_do_edit' ) {
   &do_memoedit();
 } elsif( $mode eq 'csv' ) {
@@ -421,7 +423,7 @@ EOF
 }
 
 sub do_input {
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
 
   my $q_date     = &escape_html(decode('utf-8', scalar($form->param('date'))));
   my $q_category = $dbh->quote(decode('utf-8', scalar($form->param('category'))));
@@ -480,7 +482,7 @@ sub do_input {
 ##############
 sub print_view_form() {
   &header(encode('utf-8', '出納出力'));
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
 
   my($sec, $min, $hour, $day, $mon, $year) = localtime(time);
   $year += 1900;
@@ -762,7 +764,7 @@ EOF
 
 sub print_figures {
   &header(encode('utf-8', '統計情報'));
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
 
   my($sec, $min, $hour, $day, $mon, $year) = localtime(time);
   $year += 1900;
@@ -949,7 +951,7 @@ sub print_edit_form {
   } 
 
   my $id = &escape_html(scalar $form->param('id'));
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
 
   my $query  = "SELECT year, month, day, category, summary, expend, income, note ";
      $query .= "FROM webform WHERE id=${id};";
@@ -1113,9 +1115,9 @@ sub do_edit {
 
   if(! scalar($form->param('id')) || scalar($form->param('id')) eq '') {
     &error(encode('utf-8', 'IDが指定されていません'));
-  } 
+  }
 
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
 
   my $q_id       = int(scalar $form->param('id'));
   my $q_date     = &escape_html(scalar $form->param('date'));
@@ -1180,9 +1182,9 @@ sub do_delete {
 
   if(! scalar($form->param('id')) || scalar($form->param('id')) eq '') {
     &error('IDが指定されていません');
-  } 
+  }
 
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
   my $q_id = int(scalar $form->param('id'));
 
   my $query = "DELETE FROM webform WHERE id=$q_id;";
@@ -1213,53 +1215,8 @@ EOF
   exit(0);
 }
 
-sub print_memoedit_form() {
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
-  my ($q_year) = int(scalar $form->param('year'));
-  my ($q_mon)  = int(scalar $form->param('mon'));
-
-  my $memo_text;
-  $query  = "SELECT text ";
-  $query .= "FROM memo WHERE year=${q_year} AND month=${q_mon};";
-  my $sth = $dbh->prepare($query);
-  $sth->execute();
-  if ($sth->rows > 0) {
-    my @row = $sth->fetchrow_array;
-    $memo_text = $row[0] if defined $row[0];
-  }
-  $sth->finish();
-
-  &header_smp(encode('utf-8', 'メモ編集'));
-
-  my $mes = <<EOF;
-<script type="text/javascript">
-<!--
-  function back_input() {
-    document.f_input.mode.value = "view";
-    document.f_input.submit();
-  }
--->
-</script>
-<h2>メモ編集</h2>
-<form action="$ENV{'SCRIPT_NAME'}" method="POST" name="f_input">
-<input type="hidden" name="mode" value="memo_do_edit">
-<input type="hidden" name="year" value="${q_year}">
-<input type="hidden" name="mon" value="${q_mon}">
-<textarea rows="3" tabindex="1" name="memo" style="width: 700px; height: 60px; resize:none">${memo_text}</textarea><br>
-<input type="submit" class="submit_button" name="b_submit" tabindex="2" value="変更">&nbsp;
-<input type="button" class="normal_button" onClick="back_input()" name="b_back" tabindex="3" value="戻る">
-</form>
-EOF
-  print(encode('utf-8', $mes));
-
-  $dbh->disconnect;
-
-  &tail();
-  exit(0);
-}
-
 sub do_memoedit() {
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
   my ($q_year) = int(scalar $form->param('year'));
   my ($q_mon)  = int(scalar $form->param('mon'));
   my ($q_memo) = &escape_html(decode('utf-8', scalar($form->param('memo'))));
@@ -1383,7 +1340,7 @@ sub data_restore() {
   my $line = 0;
   my $guess;
   my $fh = scalar($form->upload('upload_file'));
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
   my $sth;
 
   if (scalar($form->param('action')) eq "refresh") {
@@ -1462,7 +1419,7 @@ sub data_count() {
 
   print "Content-Type: text/plain\n\n";
 
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
 
   my $sth = $dbh->prepare($query);
   $sth->execute();
@@ -1478,4 +1435,48 @@ sub data_count() {
   exit(0);
 }
 
-exit(0);
+sub connectDatabase {
+  my $dbh;
+  eval {
+    $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  };
+  if ($@) {
+    &error(encode('utf-8', "データベースの接続失敗 - $@"));
+  }
+
+  return $dbh;
+}
+
+sub loadConfig {
+  my ($config) = @_;
+
+  if (open(my $fh, $config)) {
+    print "load: ${config}\n";
+    while (my $data = decode('utf-8', <$fh>)) {
+      chomp($data);
+      my ($key, $value) = split('=', $data);
+      $key   =~ s/^\s*(.*?)\s*$/$1/;
+      $value =~ s/^\s*(.*?)\s*$/$1/;
+      setConfig($key, $value);
+    }
+    close($fh);
+    return 1;
+  } else {
+    print STDERR "failed to load ${config}\n";
+    return 0;
+  }
+}
+
+sub setConfig {
+  my ($key, $value) = @_;
+
+  if ($key eq 'db_user') {
+    $db_user = $value;
+  } elsif ($key eq 'db_pass') {
+    $db_pass = $value;
+  } elsif ($key eq 'db_host') {
+    $db_host = $value;
+  } elsif ($key eq 'db_name') {
+    $db_name = $value;
+  }
+}
