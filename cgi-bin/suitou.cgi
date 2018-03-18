@@ -1188,7 +1188,7 @@ sub csv() {
   print "Content-Type: text/csv\n";
   print "Content-Disposition: attachment; filename=${filename}\n\n";
 
-  my $dbh = DBI->connect("DBI:mysql:$db_name@$db_host", $db_user, $db_pass, @db_opt);
+  my $dbh = connectDatabase();
 
   my $sth = $dbh->prepare($query);
   $sth->execute();
