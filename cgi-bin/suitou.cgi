@@ -109,7 +109,7 @@ if( $mode eq '' || $mode eq 'input' || $mode eq 'edit' ) {
 } elsif( $mode eq 'count' ) {
   &data_count();
 } else {
-  &header_smp(encode('utf-8', 'エラー'));
+  &header(encode('utf-8', 'エラー'));
   &error(encode('utf-8', '不正なパラメータ'));
 }
 
@@ -137,7 +137,7 @@ sub print_input_form {
     $q_date = "${year}/${mon}/${day}";
   } elsif ($mode eq 'edit') {
     if(! $q_id || $q_id eq '') {
-      &header_smp(encode('utf-8', 'エラー'));
+      &header(encode('utf-8', 'エラー'));
       &error(encode('utf-8', 'IDが指定されていません'));
     }
     my $dbh = connectDatabase();
@@ -155,7 +155,7 @@ sub print_input_form {
       $q_income   = &escape_html($row[6]);
       $q_note     = &escape_wquot($row[7]);
     } else {
-      &header_smp(encode('utf-8', 'エラー'));
+      &header(encode('utf-8', 'エラー'));
       &error(encode('utf-8', 'データが見つかりませんでした'));
     }
   } elsif (! $q_date || $q_date eq '') {
@@ -165,7 +165,7 @@ sub print_input_form {
     $q_day  = $day;
   }
 
-  &header_smp(encode('utf-8', '出納入力画面'));
+  &header_input(encode('utf-8', '出納入力画面'));
 
   my $mes = <<EOF;
 <script type="text/JavaScript">
@@ -260,6 +260,7 @@ sub print_input_form {
     document.f_input.b_submit.disabled = true;
     document.f_input.b_back.disabled = true;
 
+    document.getElementById("message").innerHTML = "送信完了までお待ちください";
     document.f_input.b_submit.value = "送信中";
     document.f_input.category.disabled = false;
 
@@ -516,19 +517,19 @@ sub do_input {
      $mon  !~ /^\d+$/ || $mon  < 0    || $mon  > 13   ||
      $day  !~ /^\d+$/ || $day  < 0    || $day  > 32 )
   {
-    &header_smp(encode('utf-8', '登録エラー'));
+    &header(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "月／日が不正です。"));
   }
   if($q_category eq "''") {
-    &header_smp(encode('utf-8', '登録エラー'));
+    &header(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "分類が入っていません。"));
   }
   if($q_expend !~ /^\d+$/ || $q_expend < 0 || $q_expend > 1000000) {
-    &header_smp(encode('utf-8', '登録エラー'));
+    &header(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "支出が不正です。"));
   }
   if($q_income !~ /^\d+$/ || $q_income < 0 || $q_income > 1000000) {
-    &header_smp(encode('utf-8', '登録エラー'));
+    &header(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "収入が不正です。"));
   }
 
@@ -543,7 +544,7 @@ sub do_input {
 
   if($@) {
     $dbh->disconnect;
-    &header_smp(encode('utf-8', '登録エラー'));
+    &header(encode('utf-8', '登録エラー'));
     &error(encode('utf-8', "登録に失敗しました - $@"));
   }
 
@@ -802,7 +803,7 @@ EOF
     document.write('<tr><td>');
     document.write('<table border="0" style="width: 100%">');
     document.write('<tr><td width="90" colspan="2">'+ row.cells.item(0).firstChild.nodeValue + '</td>');
-    document.write('<td></td>')+
+    document.write('<td></td>');
     document.write('<td width="70" style="text-align: right;">'+ row.cells.item(4).firstChild.nodeValue + '</td>');
     document.write('<td width="70" style="text-align: right;">'+ row.cells.item(3).firstChild.nodeValue + '</td>');
     document.write('</tr><tr>');
@@ -1015,7 +1016,7 @@ EOF
 }
 
 sub do_edit {
-  &header_smp(encode('utf-8', '編集しました'));
+  &header_input(encode('utf-8', '編集しました'));
 
   if(! scalar($form->param('id')) || scalar($form->param('id')) eq '') {
     &error(encode('utf-8', 'IDが指定されていません'));
@@ -1082,7 +1083,7 @@ EOF
 }
 
 sub do_delete {
-  &header_smp(encode('utf-8', '削除しました'));
+  &header_input(encode('utf-8', '削除しました'));
 
   if(! scalar($form->param('id')) || scalar($form->param('id')) eq '') {
     &error('IDが指定されていません');

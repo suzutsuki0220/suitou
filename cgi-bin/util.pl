@@ -32,37 +32,23 @@ sub error {
 
 sub header {
   my($title) = @_;
-  $title = encode('utf-8', $title) if(utf8::is_utf8($title));
 
-  print "Content-Type: text/html\n\n";
-
-if(isSP()) {
-  # スマホ向けのHTMLヘッダ
-  print <<EOF;
-<!DOCTYPE html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width; initial-scale=1.0;">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-touch-fullscreen" content="YES">
-<meta http-equiv="Content-Script-Type" content="text/javascript">
-<meta http-equiv="Content-Style-Type" content="text/css">
-<meta name="format-detection" content="telephone=no">
-<!-- <meta name="apple-mobile-web-app-capable" content="yes"> -->
-<!-- <meta name="apple-mobile-web-app-status-bar-style" content="black"> -->
-EOF
-} else {
-  # PC向けヘッダ
-  print <<EOF;
-<!DOCTYPE html>
-<head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta http-equiv="Content-Script-Type" content="text/javascript">
-<meta http-equiv="Content-Style-Type" content="text/css">
-EOF
+  &header_begin();
+  &stylesheet_table();
+  &set_title($title);
+  &header_end();
 }
 
+sub header_input {
+  my($title) = @_;
+
+  &header_begin();
+  &stylesheet_input();
+  &set_title($title);
+  &header_end();
+}
+
+sub stylesheet_table {
 print <<EOF;
 <style type="text/css">
 <!--
@@ -80,23 +66,6 @@ print <<EOF;
     margin-bottom: 3px;
     font-weight: bold;
     font-size: 12pt;
-  }
-  a.content {
-    /* text-decoration: none; */
-  }
-  div.imagebox {
-    border: 1px dashed #0000cc;
-    background-color: #eeeeff;
-    float: left;
-    margin: 5px;
-  }
-  p.image, p.caption {
-    text-align: center;
-    font-size: 75%;
-    margin: 5px;
-  }
-  p.caption {
-    color: darkblue;
   }
   table.tb1 {
     border: 1ps solid #666666;
@@ -124,10 +93,6 @@ print <<EOF;
   table.center td {
     text-align: center;
     word-break: break-all;
-  }
-  table.tb1 caption {
-    font-size: 10pt;
-    text-align: left;
   }
   table.tb1 table th {
     border: 0px solid #666666;
@@ -172,30 +137,41 @@ print <<EOF;
   }
 -->
 </style>
-<title>${title}</title>
-</head>
-<body>
 EOF
-
-  return;
 }
 
-sub header_smp {
-  my($title) = @_;
-  $title = encode('utf-8', $title) if(utf8::is_utf8($title));
-
+sub header_begin {
   print "Content-Type: text/html\n\n";
   print <<EOF;
 <!DOCTYPE html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-<meta name="viewport" content="width=device-width: initial-scale=1.0; maximum-scale=1.0; user-scalable=no;">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-touch-fullscreen" content="YES">
 <meta http-equiv="Content-Script-Type" content="text/javascript">
 <meta http-equiv="Content-Style-Type" content="text/css">
 <meta name="format-detection" content="telephone=no">
+EOF
+}
+
+sub header_end {
+  print <<EOF;
+</head>
+<body>
+EOF
+}
+
+sub set_title {
+  my($title) = @_;
+  $title = encode('utf-8', $title) if(utf8::is_utf8($title));
+
+  print "<title>${title}</title>\n";
+}
+
+sub stylesheet_input {
+  print <<EOF;
 <style type="text/css">
 <!--
   body {
@@ -278,12 +254,7 @@ sub header_smp {
   }
 -->
 </style>
-<title>${title}</title>
-</head>
-<body>
 EOF
-
-  return;
 }
 
 sub tail {
@@ -291,25 +262,6 @@ sub tail {
 </body>
 </html>
 EOF
-
-  return;
-}
-
-sub isSP {
-  # スマホチェック
-  if(! $ENV{'HTTP_USER_AGENT'}) {
-    # 不明な場合スマホ以外として扱う
-    return 0;
-  }
-
-  my $agent = lc($ENV{'HTTP_USER_AGENT'});
-
-  if(index($agent, "android") >=0 || index($agent, "mobile") >=0 ||
-     index($agent, "ipod") >=0 || index($agent, "iphone") >=0  || index($agent, "ipad") >=0 )
-  {
-    return 1;
-  }
-  return 0;
 }
 
 sub escape_html {
