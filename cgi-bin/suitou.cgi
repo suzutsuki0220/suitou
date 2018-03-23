@@ -50,7 +50,6 @@ use CGI;
 #      -> PRIMARY KEY (year, month) );
 #
 # ---
-require './util.pl';
 
 my $db_user = "mysql";
 my $db_pass = "mysql";
@@ -335,8 +334,8 @@ sub print_input_form {
 
     for (i=1; i<=monthDays[month-1]; i++) {
         if (week == 0) {
-	    d += '<tr>';
-	}
+        d += '<tr>';
+    }
 
 	if (nowDay.getFullYear() == year && nowDay.getMonth()+1 == month && nowDay.getDate() == i) {
 	    // 今日のセル
@@ -1270,36 +1269,36 @@ sub data_restore() {
     while(length($buffer) > 0) {
       if (substr($buffer, 0, 1) eq '"') {
         if ((my $pos = index($buffer, '",', 1)) > 0) {
-	  $data[$idx] = substr($buffer, 1, $pos-1);
-	  $buffer = substr($buffer, $pos+2);
-	} elsif (substr($buffer, -1, 1) eq '"') {
-	  $data[$idx] = substr($buffer, 1, length($buffer)-2);
-	  $buffer = "";
+          $data[$idx] = substr($buffer, 1, $pos-1);
+          $buffer = substr($buffer, $pos+2);
+        } elsif (substr($buffer, -1, 1) eq '"') {
+          $data[$idx] = substr($buffer, 1, length($buffer)-2);
+          $buffer = "";
         } else {
           $data[$idx] = $buffer;
-	  $buffer = "";
-	}
+          $buffer = "";
+        }
       } else {
         if ((my $pos = index($buffer, ',', 0)) > 0) {
-	  $data[$idx] = substr($buffer, 0, $pos);
-	  $buffer = substr($buffer, $pos+1);
+          $data[$idx] = substr($buffer, 0, $pos);
+          $buffer = substr($buffer, $pos+1);
         } else {
           $data[$idx] = $buffer;
-	  $buffer = "";
-	}
+          $buffer = "";
+        }
       }
       $idx++;
     }
     if ($line == 0 ) {
       if ($data[0] ne "year"     ||
-	  $data[1] ne "month"    ||
+          $data[1] ne "month"    ||
           $data[2] ne "day"      ||
-	  $data[3] ne "category" ||
-	  $data[4] ne "summary"  ||
-	  $data[5] ne "expend"   ||
-	  $data[6] ne "income"   ||
-	  $data[7] ne "note"
-	 )
+          $data[3] ne "category" ||
+          $data[4] ne "summary"  ||
+          $data[5] ne "expend"   ||
+          $data[6] ne "income"   ||
+          $data[7] ne "note"
+         )
       {
         &header();
         &error("Invalid csv format");
@@ -1386,4 +1385,272 @@ sub setConfig {
   } elsif ($key eq 'db_name') {
     $db_name = $value;
   }
+}
+
+sub error {
+  my($message) = @_;
+
+  print encode('utf-8', "エラーが発生しました<br>\n");
+  if( length($message) > 0 ) {
+    print encode('utf-8', "原因: ") . $message . "\n";
+  }
+
+  &tail();
+  exit(1);
+}
+
+sub header {
+  my($title) = @_;
+
+  &header_begin();
+  &stylesheet_table();
+  &set_title($title);
+  &header_end();
+}
+
+sub header_input {
+  my($title) = @_;
+
+  &header_begin();
+  &stylesheet_input();
+  &set_title($title);
+  &header_end();
+}
+
+sub stylesheet_table {
+print <<EOF;
+<style type="text/css">
+<!--
+  .partition {
+    clear: both;
+    padding-top: 5px;
+    padding-bottom: 5px;
+   /* border-top: solid 1px; */
+    margin: 5px 5px 0px 0px;
+  }
+  .listtext {
+    margin-left: 10px;
+    margin-right: 0px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    font-weight: bold;
+    font-size: 12pt;
+  }
+  table.tb1 {
+    border: 1ps solid #666666;
+    border-collapse: collapse;
+    empty-cells: show;
+    margin-top: 1em;
+    margin-bottom: 1em;
+    margin-left: 0em;
+    margin-right: 0em;
+  }
+  table.tb1 th {
+    font-size: 10pt;
+    word-break: break-all;
+    border: 1px solid #666666;
+    padding: 0px 3px;
+    background-color: #ccccff;
+    color: #333366;
+  }
+  table.tb1 td {
+    font-size: 10pt;
+    word-break: break-all;
+    border: 1px solid #666666;
+    padding: 0px 3px;
+  }
+  table.center td {
+    text-align: center;
+    word-break: break-all;
+  }
+  table.tb1 table th {
+    border: 0px solid #666666;
+  }
+  table.tb1 table td {
+    border: 0px solid #666666;
+  }
+  table.tb1.tbtotal {
+    margin-left: auto;
+    margin-right: 0px;
+  }
+  table.large-only {
+    display: table;
+  }
+  table.small-only {
+    display: none;
+  }
+  textarea.memo {
+    width: 700px;
+    height: 45px;
+    font-size: 9pt;
+    resize:none;
+  }
+  div#MemoButton {
+    text-align: right;
+    width: 700px;
+  }
+  \@media screen and (max-width: 720px) {
+    table.large-only {
+      display: none;
+    }
+    table.small-only {
+      display: table;
+      width: 100%;
+    }
+    textarea.memo {
+      width: 100%;
+    }
+    div#MemoButton {
+      width: 100%;
+    }
+  }
+-->
+</style>
+EOF
+}
+
+sub header_begin {
+  print "Content-Type: text/html\n\n";
+  print <<EOF;
+<!DOCTYPE html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-touch-fullscreen" content="YES">
+<meta http-equiv="Content-Script-Type" content="text/javascript">
+<meta http-equiv="Content-Style-Type" content="text/css">
+<meta name="format-detection" content="telephone=no">
+EOF
+}
+
+sub header_end {
+  print <<EOF;
+</head>
+<body>
+EOF
+}
+
+sub set_title {
+  my($title) = @_;
+  $title = encode('utf-8', $title) if(utf8::is_utf8($title));
+
+  print "<title>${title}</title>\n";
+}
+
+sub stylesheet_input {
+  print <<EOF;
+<style type="text/css">
+<!--
+  body {
+    font-size: 11pt;
+  }
+
+  div.center {
+    text-align: center;
+  }
+
+  ul li {
+    list-style: none;
+  }
+
+  ul {
+    margin-left: 10px;
+    padding-left: 0px;
+  }
+
+  input, select {
+    border: 2px solid #d0d0d0;
+    border-radius: 5px;
+    font-size: 120%;
+    margin: 3px 0px;
+  }
+
+  input[type="text"] {
+    width: 375px;
+  }
+
+  label {
+    width: 70px;
+    float: left;
+    margin: 3px 5px 3px 0px;
+  }
+
+  \@media screen and (max-width: 480px)
+  {
+    input[type="text"] {
+      width: 77%;
+    }
+
+    label {
+      width: 20%;
+      float: left;
+    }
+  }
+
+  input.submit_button {
+    font-size: 100%;
+    font-weight: bold;
+    background-color: #4169e1;
+    color: #ffffff;
+    font-family: Arial;
+    border: 1px solid #ff9966;
+    margin: 0px;
+    padding: 10px 50px 10px 50px;
+  }
+
+  input.normal_button {
+    font-size: 100%;
+    font-weight: bold;
+    background-color: #ffffff;
+    color: #000000;
+    font-family: Arial;
+    border: 1px solid #ff9966;
+    margin: 0px;
+    padding: 10px 35px 10px 35px;
+  }
+
+  #Calendar {
+    background: -webkit-linear-gradient(top, #fff 0%, #f0f0f0 100%);
+    background: linear-gradient(to bottom, #fff 0%, #f0f0f0 100%);
+    border: 1px solid #ccc;
+    border-top: 4px solid #1c66fe;
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, 1) inset;
+    margin: 0.5em 0 2em 0;
+    padding: 2em;
+    width: 200px;
+  }
+-->
+</style>
+EOF
+}
+
+sub tail {
+  print <<EOF;
+</body>
+</html>
+EOF
+}
+
+sub escape_html {
+  my($string) = @_;
+
+  $string =~ s/&/&amp;/g;
+  $string =~ s/"/&quot;/g;
+  $string =~ s/</&lt;/g;
+  $string =~ s/>/&gt;/g;
+
+  $string =~ s/\r/&#x0d;/g;
+  $string =~ s/\n/&#x0a;/g;
+
+  return $string;
+}
+
+sub escape_wquot {
+  my($string) = @_;
+
+  $string =~ s/"/\\"/g;
+
+  return $string;
 }
