@@ -1437,7 +1437,7 @@ print <<EOF;
     font-size: 12pt;
   }
   table.tb1 {
-    border: 1ps solid #666666;
+    border: 1px solid #666666;
     border-collapse: collapse;
     empty-cells: show;
     margin-top: 1em;
