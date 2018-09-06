@@ -726,10 +726,12 @@ EOF
 <script type="text/javascript">
 <!--
 function showMemoButton() {
+  document.fym.year.focus();  // focus other element, to resolv still readonly on chrome
   document.memo_top.memo.readOnly = false;
   htmldata  = '<input type="submit" value="保存">&nbsp;';
   htmldata += '<input type="button" onClick="hideMemoButton()" value="キャンセル">';
   document.getElementById('MemoButton').innerHTML = htmldata;
+  document.memo_top.memo.focus();
 }
 function hideMemoButton() {
   document.memo_top.memo.readOnly = true;
