@@ -37,6 +37,7 @@ use CGI;
 #      -> summary VARCHAR(512) NOT NULL,
 #      -> expend MEDIUMINT UNSIGNED DEFAULT 0 NOT NULL,
 #      -> income MEDIUMINT UNSIGNED DEFAULT 0 NOT NULL,
+#      -> payment INT DEFAULT 1 NOT NULL,
 #      -> note VARCHAR(512),
 #      -> user VARCHAR(64) );
 #  mysql> GRANT SELECT,UPDATE,INSERT,DELETE ON suitou.* TO mysql@localhost IDENTIFIED BY 'mysql';
@@ -48,6 +49,9 @@ use CGI;
 #      -> month INT NOT NULL,
 #      -> text TEXT,
 #      -> PRIMARY KEY (year, month) );
+#  mysql> CREATE TABLE suitou.payment (
+#      -> id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+#      -> name TEXT NOT NULL);
 #
 # ---
 
@@ -124,6 +128,7 @@ sub print_input_form {
   my $q_expend   = &escape_html(decode('utf-8', scalar($form->param('expend'))));
   my $q_income   = &escape_html(decode('utf-8', scalar($form->param('income'))));
   my $q_note     = &escape_html(decode('utf-8', scalar($form->param('note'))));
+  my $q_payment  = &escape_html(decode('utf-8', scalar($form->param('payment'))));
   my $q_id       = &escape_html(scalar $form->param('id'));
 
   my($q_year, $q_mon, $q_day) = split(/[\/\-]/, $q_date);
@@ -131,6 +136,8 @@ sub print_input_form {
   my($sec, $min, $hour, $day, $mon, $year) = localtime(time);
   $year += 1900;
   $mon += 1;
+
+  my %payment = getPayment();
 
   if ($mode eq 'do_input') {
     $q_date = "${year}/${mon}/${day}";
@@ -140,7 +147,7 @@ sub print_input_form {
       &error(encode('utf-8', 'IDが指定されていません'));
     }
     my $dbh = connectDatabase();
-    my $query  = "SELECT year, month, day, category, summary, expend, income, note ";
+    my $query  = "SELECT year, month, day, category, summary, expend, income, payment, note ";
        $query .= "FROM webform WHERE id=${q_id};";
 
     my $sth = $dbh->prepare($query);
@@ -152,7 +159,8 @@ sub print_input_form {
       $q_summary  = &escape_wquot($row[4]);
       $q_expend   = &escape_html($row[5]);
       $q_income   = &escape_html($row[6]);
-      $q_note     = &escape_wquot($row[7]);
+      $q_payment  = &escape_wquot($row[7]);
+      $q_note     = &escape_wquot($row[8]);
     } else {
       &header(encode('utf-8', 'エラー'));
       &error(encode('utf-8', 'データが見つかりませんでした'));
@@ -172,22 +180,11 @@ sub print_input_form {
   var confirm_phase = false;
 
   function check_inform() {
-    document.f_input.date.value = zenkaku2hankaku(document.f_input.date.value);
-    document.f_input.summary.value = zenkaku2hankaku(document.f_input.summary.value);
-    document.f_input.expend.value = zenkaku2hankaku(document.f_input.expend.value);
-    document.f_input.income.value = zenkaku2hankaku(document.f_input.income.value);
-    document.f_input.note.value = zenkaku2hankaku(document.f_input.note.value);
-
-    document.f_input.date.value = document.f_input.date.value.replace(/ +\$/, "");
-    document.f_input.date.value = document.f_input.date.value.replace(/^ +/, "");
-    document.f_input.summary.value = document.f_input.summary.value.replace(/ +\$/, "");
-    document.f_input.summary.value = document.f_input.summary.value.replace(/^ +/, "");
-    document.f_input.expend.value = document.f_input.expend.value.replace(/ +\$/, "");
-    document.f_input.expend.value = document.f_input.expend.value.replace(/^ +/, "");
-    document.f_input.income.value = document.f_input.income.value.replace(/ +\$/, "");
-    document.f_input.income.value = document.f_input.income.value.replace(/^ +/, "");
-    document.f_input.note.value = document.f_input.note.value.replace(/ +\$/, "");
-    document.f_input.note.value = document.f_input.note.value.replace(/^ +/, "");
+    document.f_input.date.value    = zenkaku2hankaku(document.f_input.date.value.trim());
+    document.f_input.summary.value = zenkaku2hankaku(document.f_input.summary.value.trim());
+    document.f_input.expend.value  = zenkaku2hankaku(document.f_input.expend.value.trim());
+    document.f_input.income.value  = zenkaku2hankaku(document.f_input.income.value.trim());
+    document.f_input.note.value    = zenkaku2hankaku(document.f_input.note.value.trim());
 
     ymh = document.f_input.date.value.split("/");
     if(ymh[0].length == 0 || ymh[0] > 2099 || ymh[0] < 2000) {
@@ -362,19 +359,23 @@ sub print_input_form {
     hideCalendar();
   }
 
+  function lockForm(flag) {
+    document.f_input.date.readOnly = flag;
+    document.f_input.category.disabled = flag;
+    document.f_input.summary.readOnly = flag;
+    document.f_input.expend.readOnly = flag;
+    document.f_input.income.readOnly = flag;
+    document.f_input.payment.readOnly = flag;
+    document.f_input.note.readOnly = flag;
+  }
+
   function confirmInput() {
     if (check_inform() === false) {
         return;
     }
 
     confirm_phase = true;
-
-    document.f_input.date.readOnly = true;
-    document.f_input.category.disabled = true;
-    document.f_input.summary.readOnly = true;
-    document.f_input.expend.readOnly = true;
-    document.f_input.income.readOnly = true;
-    document.f_input.note.readOnly = true;
+    lockForm(true);
 
     changeForm('confirm_input');
   }
@@ -383,12 +384,7 @@ sub print_input_form {
     confirm_phase = false;
 
     document.f_input.mode.value = "input";
-    document.f_input.date.readOnly = false;
-    document.f_input.category.disabled = false;
-    document.f_input.summary.readOnly = false;
-    document.f_input.expend.readOnly = false;
-    document.f_input.income.readOnly = false;
-    document.f_input.note.readOnly = false;
+    lockForm(false);
 
     changeForm('input');
   }
@@ -419,7 +415,7 @@ sub print_input_form {
       document.title = "出納入力画面";
       document.getElementById("subtitle").innerHTML = "出納入力画面";
       document.getElementById("message").innerHTML  = "";
-      html = "<input type=\\"button\\" class=\\"submit_button\\" name=\\"b_submit\\" tabindex=\\"7\\" value=\\"送信\\" onClick=\\"confirmInput()\\">";
+      html = "<input type=\\"button\\" class=\\"submit_button\\" name=\\"b_submit\\" tabindex=\\"8\\" value=\\"送信\\" onClick=\\"confirmInput()\\">";
     }
 
     document.getElementById("button_area").innerHTML = html;
@@ -462,15 +458,26 @@ EOF
 <label for="income">収入金額</label>
 <input type="number" name="income" size="10" tabindex="5" autocomplete="off">
 </li>
+<li class="payment">
+<label for="payment">支払い</label>
+<select name="payment" tabindex="6">
+EOF
+  print encode('utf-8', $mes);
+  while ((my $key, my $value) = each(%payment)) {
+    print "<option value=\"${key}\">" . encode('utf-8', ${value}) . "</option>";
+  }
+  $mes = <<EOF;
+</select>
+</li>
 <li class="note">
 <label for="note">備考</label>
-<input type="text" name="note" size="25" maxlength="512" tabindex="6" autocomplete="off">
+<input type="text" name="note" size="25" maxlength="512" tabindex="7" autocomplete="off">
 </li>
 </ul>
 <br>
 <div id="complement"></div>
 <br>
-<div id="button_area" class="center"><input type="button" class="submit_button" name="b_submit" tabindex="7" value="送信" onClick="confirmInput()"></div><br>
+<div id="button_area" class="center"><input type="button" class="submit_button" name="b_submit" tabindex="8" value="送信" onClick="confirmInput()"></div><br>
 </form>
 <hr>
 <a href="$ENV{'SCRIPT_NAME'}?mode=view&year=${q_year}&mon=${q_mon}">出納出力</a> | 
@@ -482,11 +489,13 @@ EOF
 
   if ("${mode}" === "do_input") {
     document.getElementById('message').innerHTML = "[${q_summary}] を登録しました";
+    document.f_input.payment.value = '1';
   } else {
     document.f_input.category.value = "$q_category";
     document.f_input.summary.value = "$q_summary";
     document.f_input.expend.value = "$q_expend";
     document.f_input.income.value = "$q_income";
+    document.f_input.payment.value = "$q_payment" || '1';
     document.f_input.note.value = "$q_note";
   }
 -->
@@ -506,6 +515,7 @@ sub do_input {
   my $q_summary  = $dbh->quote(decode('utf-8', scalar($form->param('summary'))));
   my $q_expend   = int(scalar($form->param('expend')));
   my $q_income   = int(scalar($form->param('income')));
+  my $q_payment  = $dbh->quote(decode('utf-8', scalar($form->param('payment'))));
   my $q_note     = $dbh->quote(decode('utf-8', scalar($form->param('note'))));
   my $q_user     = $dbh->quote($ENV{'REMOTE_USER'});
 
@@ -532,8 +542,8 @@ sub do_input {
     &error(encode('utf-8', "収入が不正です。"));
   }
 
-  my $query = "INSERT INTO webform (year, month, day, category, summary, expend, income, note, user) ";
-  $query .= "VALUES ($year, $mon, $day, $q_category, $q_summary, $q_expend, $q_income, $q_note, $q_user);";
+  my $query = "INSERT INTO webform (year, month, day, category, summary, expend, income, payment, note, user) ";
+  $query .= "VALUES ($year, $mon, $day, $q_category, $q_summary, $q_expend, $q_income, $q_payment, $q_note, $q_user);";
 
   eval {
     my $sth = $dbh->prepare($query);
@@ -558,6 +568,9 @@ sub do_input {
 ##############
 sub print_view_form() {
   &header(encode('utf-8', '出納出力'));
+
+  my %payment = getPayment();
+
   my $dbh = connectDatabase();
 
   my($sec, $min, $hour, $day, $mon, $year) = localtime(time);
@@ -659,7 +672,7 @@ EOF
   }
 -->
 </script>
-<div style="width: 700px; text-align: right;">
+<div style="width: 800px; text-align: right;">
 <span style="float: left"><br>
 <form action="$ENV{'SCRIPT_NAME'}" method="GET" name="fym">
 <input type="hidden" name="mode" value="view">
@@ -751,7 +764,7 @@ function hideMemoButton() {
 EOF
   print(encode('utf-8', $mes));
 
-  $query  = "SELECT year, month, day, category, summary, expend, income, note, id ";
+  $query  = "SELECT year, month, day, category, summary, expend, income, note, id, payment ";
   $query .= "FROM webform WHERE year = ${year} AND month = ${mon} ORDER BY day ASC;";
   $sth = $dbh->prepare($query);
   $sth->execute();
@@ -759,13 +772,14 @@ EOF
     print(encode('utf-8', "<p>出納は登録されていません。</p>\n"));
   } else {
     $mes = <<EOF;
-<table class="tb1 large-only" id="book" width="700">
+<table class="tb1 large-only" id="book" width="800">
 <thead><tr>
 <th width="90">月／日</th>
 <th width="60">分類</th>
 <th width="230">摘要</th>
 <th width="70">支出金額</th>
 <th width="70" style="text-align: right;">収入金額</th>
+<th width="100">支払い</th>
 <th width="180">備考</th>
 </tr></thead>
 <tbody>
@@ -787,6 +801,7 @@ EOF
       print encode('utf-8', $row[4])."</a></td>\n";
       print "<td style=\"text-align: right;\">$row[5]</td>\n";
       print "<td style=\"text-align: right;\">$row[6]</td>\n";
+      print "<td>".encode('utf-8', $payment{$row[9]}) . "</td>\n";
       print "<td>".encode('utf-8', $row[7])."</td>\n";
       print "</tr>\n";
     }
@@ -1031,6 +1046,7 @@ sub do_edit {
   my $q_summary  = $dbh->quote(scalar $form->param('summary'));
   my $q_expend   = int(scalar $form->param('expend'));
   my $q_income   = int(scalar $form->param('income'));
+  my $q_payment  = $dbh->quote(scalar $form->param('payment'));
   my $q_note     = $dbh->quote(scalar $form->param('note'));
 
   my($year, $mon, $day) = split(/[\/\-]/, $q_date);
@@ -1052,7 +1068,7 @@ sub do_edit {
   }
 
   my $query = "UPDATE webform SET year=$year, month=$mon, day=$day, category=$q_category, summary=$q_summary, ";
-  $query .= "expend=$q_expend, income=$q_income, note=$q_note WHERE id=$q_id;";
+  $query .= "expend=$q_expend, income=$q_income, payment=$q_payment, note=$q_note WHERE id=$q_id;";
 
   eval {
     my $sth = $dbh->prepare($query);
@@ -1327,20 +1343,44 @@ sub data_count() {
 
   print "Content-Type: text/plain\n\n";
 
+  my $i = 1;
+  my @rows = getFromDatabase($query);
+  print @rows[0]->[0];
+
+  return;
+}
+
+sub getPayment() {
+  my $query  = "SELECT id, name FROM payment";
+  my %ret;
+
+  my @rows = getFromDatabase($query);
+  foreach my $row (@rows) {
+    $ret{@{$row}[0]} = @{$row}[1];
+  }
+
+  return %ret;
+}
+
+sub getFromDatabase {
+  my ($query) = @_;
+  my @rows;
+
   my $dbh = connectDatabase();
 
   my $sth = $dbh->prepare($query);
   $sth->execute();
 
   if ($sth->rows > 0) {
-    my @row = $sth->fetchrow_array;
-    print $row[0];
+    while(my @row = $sth->fetchrow_array) {
+      push(@rows, \@row);
+    }
   }
 
   $sth->finish();
   $dbh->disconnect;
 
-  exit(0);
+  return @rows;
 }
 
 sub connectDatabase {
@@ -1482,14 +1522,14 @@ print <<EOF;
     display: none;
   }
   textarea.memo {
-    width: 700px;
+    width: 800px;
     height: 45px;
     font-size: 9pt;
     resize:none;
   }
   div#MemoButton {
     text-align: right;
-    width: 700px;
+    width: 800px;
   }
   \@media screen and (max-width: 720px) {
     table.large-only {
