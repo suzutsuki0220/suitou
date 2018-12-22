@@ -51,7 +51,8 @@ use CGI;
 #      -> PRIMARY KEY (year, month) );
 #  mysql> CREATE TABLE suitou.payment (
 #      -> id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-#      -> name TEXT NOT NULL);
+#      -> name TEXT NOT NULL,
+#      -> ord INT NOT NULL DEFAULT 1);
 #
 # ---
 
@@ -463,8 +464,13 @@ EOF
 <select name="payment" tabindex="6">
 EOF
   print encode('utf-8', $mes);
-  while ((my $key, my $value) = each(%payment)) {
-    print "<option value=\"${key}\">" . encode('utf-8', ${value}) . "</option>";
+  my $payment_count = keys(%payment);
+  for (my $i=0; $i<=$payment_count; $i++) {
+    while ((my $key, my $value) = each(%payment)) {
+      if ($i == @{${value}}[0]) {
+        print "<option value=\"${key}\">" . encode('utf-8', @{${value}}[1]) . "</option>";
+      }
+    }
   }
   $mes = <<EOF;
 </select>
@@ -801,7 +807,7 @@ EOF
       print encode('utf-8', $row[4])."</a></td>\n";
       print "<td style=\"text-align: right;\">$row[5]</td>\n";
       print "<td style=\"text-align: right;\">$row[6]</td>\n";
-      print "<td>".encode('utf-8', $payment{$row[9]}) . "</td>\n";
+      print "<td>".encode('utf-8', $payment{$row[9]}[1]) . "</td>\n";
       print "<td>".encode('utf-8', $row[7])."</td>\n";
       print "</tr>\n";
     }
@@ -818,8 +824,9 @@ EOF
     var row = rows.item(i);
     document.write('<tr><td>');
     document.write('<table border="0" style="width: 100%">');
-    document.write('<tr><td width="90" colspan="2">'+ row.cells.item(0).firstChild.nodeValue + '</td>');
-    document.write('<td></td>');
+    document.write('<tr><td width="100" colspan="2">'+ row.cells.item(0).firstChild.nodeValue + '</td>');
+    const payment = row.cells.item(5).firstChild.nodeValue;
+    document.write('<td style="text-align: right;">' + payment + '</td>');
     document.write('<td width="70" style="text-align: right;">'+ row.cells.item(4).firstChild.nodeValue + '</td>');
     document.write('<td width="70" style="text-align: right;">'+ row.cells.item(3).firstChild.nodeValue + '</td>');
     document.write('</tr><tr>');
@@ -827,9 +834,9 @@ EOF
     document.write('<th width="60" style="text-align: center;">'+ row.cells.item(1).firstChild.nodeValue + '</td>');
     document.write('<td colspan="4"><a href="' + row.cells.item(2).firstChild.href + '">' + row.cells.item(2).firstChild.firstChild.nodeValue + '</a></td></tr>');
 
-    var note = row.cells.item(5).firstChild.nodeValue;
+    const note = row.cells.item(6).firstChild.nodeValue;
     if (note.length != 0) {
-      document.write('<tr><th width="20%" style="text-align: center;">備考</td><td colspan="4">'+ note + '</td></tr>');
+      document.write('<tr><th width="22%" style="text-align: center;">備考</td><td colspan="4">'+ note + '</td></tr>');
     }
     document.write('</table>');
     document.write('</td></tr>');
@@ -1351,12 +1358,12 @@ sub data_count() {
 }
 
 sub getPayment() {
-  my $query  = "SELECT id, name FROM payment";
+  my $query  = "SELECT id, ord, name FROM payment";
   my %ret;
 
   my @rows = getFromDatabase($query);
   foreach my $row (@rows) {
-    $ret{@{$row}[0]} = @{$row}[1];
+    $ret{@{$row}[0]} = [@{$row}[1], @{$row}[2]];
   }
 
   return %ret;
