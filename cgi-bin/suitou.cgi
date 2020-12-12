@@ -122,6 +122,20 @@ exit(0);
 ##############
 #  入力画面  #
 ##############
+sub get_input_supplement {
+  my $dbh = connectDatabase();
+  my $query = "SELECT DISTINCT(summary) FROM webform ORDER BY ID DESC LIMIT 10;";
+  my $sth = $dbh->prepare($query);
+  $sth->execute();
+
+  while (my @row = $sth->fetchrow_array) {
+    print "<option value='" . encode('utf-8', $row[0]) . "'></option>";
+  }
+
+  $sth->finish();
+  $dbh->disconnect;
+}
+
 sub print_input_form {
   my $q_date     = &escape_html(decode('utf-8', scalar($form->param('date'))));
   my $q_category = &escape_html(decode('utf-8', scalar($form->param('category'))));
@@ -449,7 +463,13 @@ EOF
 </li>
 <li class="summary">
 <label for="summary">摘要</label>
-<input type="text" name="summary" size="25" maxlength="512" tabindex="3" autofocus autocomplete="off">
+<input type="text" name="summary" size="25" maxlength="512" tabindex="3" autofocus autocomplete="on" list="outline">
+<datalist id="outline">
+EOF
+  print encode('utf-8', $mes);
+  get_input_supplement();
+  $mes = <<EOF;
+</datalist>
 </li>
 <li class="expend">
 <label for="expend">支出金額</label>
